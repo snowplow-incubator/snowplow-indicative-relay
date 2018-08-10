@@ -1,0 +1,80 @@
+shared_deployment_options: &shared
+  access_key_id: "$AWS_DEPLOY_ACCESS_KEY_ID"
+  secret_access_key: "$AWS_DEPLOY_SECRET_ACCESS_KEY"
+  skip_cleanup: true
+  local_dir: target/scala-2.11/assembled_jars
+  upload_dir: relays/indicative
+  on:
+    tags: true
+
+language: scala
+scala:
+- 2.11.12
+before_deploy: 
+- > 
+  if ! [ "$BEFORE_DEPLOY_RUN" ]; then
+    export BEFORE_DEPLOY_RUN=1;
+    sbt assembly;
+  fi
+
+deploy:
+- provider: s3
+  bucket: snowplow-hosted-assets
+  region: eu-west-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-us-east-1
+  region: us-east-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-us-west-1
+  region: us-west-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-us-west-2
+  region: us-west-2
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-sa-east-1
+  region: sa-east-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-eu-central-1
+  region: eu-central-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ap-southeast-1
+  region: ap-southeast-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ap-southeast-2
+  region: ap-southeast-2
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ap-northeast-1
+  region: ap-northeast-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ap-south-1
+  region: ap-south-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-us-east-2
+  region: us-east-2
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ca-central-1
+  region: ca-central-1
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-eu-west-2
+  region: eu-west-2
+  <<: *shared
+- provider: s3
+  bucket: snowplow-hosted-assets-ap-northeast-2
+  region: ap-northeast-2
+  <<: *shared
+env:
+  global:
+  - secure: Mqhz4m/B8UOLP7o4g+z29wZ67W2ImkKgjHynTBSnFa1dliO/ogPnE9Jk+c7nuoji/Wbx6x8ZtGDMjl8c8FVHrcRZes/1oYog6/TsuVR/6u2XaB/k7tx8LkvaCKVjLr6FXCH3zSGgfb7h0U/4Oec4/J2e26u6+ArxGYqKcuIp31kXgPbHKS3W7euv2tFQOXWUXyALHKlfF7Tm7Xw9ixjYGJZKTLa1tMCPBVzhzhUsj0506VNHwxeg/utqCltJsW3R+/EvkpXg1/azo2DAMd8nZnYdYcmRPhylgqNAhXhsngVETwt2AexRS8gISYdwKwll5G6HwU4udzH/oup/5ALri4hiS7ePbml3XfIP6ngxislwHOVfr79lEAvZ/ey1OcXsvjbK0hDdhkSLcsvGZHSuyRNbdjaMjDtNOGFmQ5+NZIZ5QX9sxB7gq/cice5IwRcTrb5tr3fgYjP9GhfpSwOg4yKhVTPxePGffcYRAIiubHa+UlkHsTuqephysiGE/w61qFRrc0XOeP8h7dx/oB31ais+OFAZhouok0Kq7oNpu0ccIo2o5BnBW+O1Kq1kVW7HS3/bzYsOhUMWXyuyLG77cbX7p5HIAgf9+pm1irBfJhs9VKxPQaco6Bb6x7NTPdCjjhxlbVpHCzkQ86UUVkWs+n/b5AlBBNZ3q8MwOwWEm9U=
+  - secure: scyOBiE6PzGpK2F+7IJt0doeKKehNQV9COLc1cVWpzoZ9/fV3saqKJlMF/saBNImvNJd0cLoi0WYXJqLOAHzJJN/lenTwYDfpN4ppXwOtH/9x/nil1crs75vuC/V1qBtexWmNUs1VrfaXsj4QEG92Ka/19qjnU7xVyzaCb8KtGB/yhe3Xv+QU0Rdkc9QdFaJj+wtJKV0S8RxUgpRWV/feGVhEzakei3p0ecgUFVhTGg/5nmzMDkK1FgPPpDbXAf9vTBlNEHmsibv0hbhxUsHVVpE1TDQMyxnpqLAlL6pl4MObZzo6uYODGXYU9coW0fQIgGmxk5zPSKXKvXE5MBf1EsUS9yiZZlIWAEfICwomhWs8m+9DnN5PdSnYWbw+FUAokTFFgcZWRPUj1LLgNp3sXDpe3Rou/7R+Cw9gdwQe4goo21YZlp6FBXR3vq5lB9e7r6s2YmcPDAquvS3irTo2lVq8wAsCukwNkUiLpFKeRfsVZzmP+FeZ13pLG5o+sRLkfixGVWNMPhWZdAbcba6INaBDWJuEQ54UegkQ2OeeRd/y6Y65WajxRh6nzvDwR19HOxXjtn86cKVcNc/y0LGESClfZ7TZCdIrtB+dhQJgxHQUBN+xVv58f/0W/K4vGSCP4QBZGRbibyHasbVbCPmAJ98NWiQG0BZClm9eM6R1VE=
