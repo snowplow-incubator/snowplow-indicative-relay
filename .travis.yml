@@ -10,7 +10,12 @@ shared_deployment_options: &shared
 language: scala
 scala:
 - 2.11.12
-before_deploy: sbt assembly
+before_deploy: 
+- > 
+  if ! [ "$BEFORE_DEPLOY_RUN" ]; then
+    export BEFORE_DEPLOY_RUN=1;
+    sbt assembly;
+  fi
 
 deploy:
 - provider: s3
