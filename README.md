@@ -7,35 +7,7 @@ Snowplow Indicative Relay is an AWS Lambda function that reads Snowplow enriched
 from a Kinesis Stream and transfers them to Indicative. It processes events in batches, which
 size depends on your AWS Lambda configuration.
 
-
-## Usage
-
-### Code deployment
-
-We host a jar file on S3 through Snowplow [hosted assets][hosted-assets].
-For example:
-```
-s3://snowplow-hosted-assets/relays/indicative/indicative-relay-0.1.0.jar
-```
-You will need to use a S3 bucket in the same region as your lambda. The above URL is for the *eu-west-1* region.
-Buckets in other regions have their region names added to the base of the URL, like this:
-```
-s3://snowplow-hosted-assets-us-east-1/relays/indicative/indicative-relay-0.1.0.jar
-s3://snowplow-hosted-assets-eu-central-1/relays/indicative/indicative-relay-0.1.0.jar
-```
-
-### Creating the Lambda
-
-Your AWS Lambda needs to have an Execution Role that allows it to use the Kinesis Stream.
-To create one please follow [the official AWS tutorial][aws-tutorial].
-Then create a lambda function with the created role, either through AWS Console or through the CLI.
-
-In the *Handler* textbox paste `com.snowplowanalytics.indicative.LambdaHandler::recordHandler`
-
-You will need to provide the Indicative API Key as an environment variable `INDICATIVE_API_KEY`.
-
-Finally, add your Snowplow enriched Kinesis stream as an event source for the lambda function.
-
+Detailed setup instructions, as well as more technical information, are provided on the [wiki page][wiki-page].
 
 ## Copyright and license
 
@@ -54,5 +26,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 
-[hosted-assets]: https://github.com/snowplow/snowplow/wiki/Hosted-assets
-[aws-tutorial]: https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis-example-create-iam-role.html
+[wiki-page]: https://github.com/snowplow-incubator/snowplow-indicative-relay/wiki
