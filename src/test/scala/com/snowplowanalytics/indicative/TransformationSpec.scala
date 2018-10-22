@@ -12,10 +12,16 @@
  */
 package com.snowplowanalytics.indicative
 
-import org.json4s.jackson.JsonMethods._
+import cats.data.EitherT
+import cats.instances.option._
+import cats.syntax.either._
 import io.circe.literal._
-import org.specs2.{ScalaCheck, Specification}
+import org.json4s.jackson.JsonMethods._
+
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
+import com.snowplowanalytics.indicative.Transformer.TransformationError
+
+import org.specs2.{ScalaCheck, Specification}
 import org.scalacheck.Prop.forAll
 import org.specs2.execute.Result
 import org.specs2.matcher.Matchers
@@ -24,9 +30,10 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
   def is = s2"""
 
     integration test                                                $e1
-    should be transformed with real contexts generated from schemas $e2
-    flattenJson should work on empty arrays                         $e3
-    flattenJson should work on empty objects                        $e4
+    integration test without user identifying property              $e2
+    should be transformed with real contexts generated from schemas $e3
+    flattenJson should work on empty arrays                         $e4
+    flattenJson should work on empty objects                        $e5
 
   """
 
@@ -48,12 +55,15 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     }
 
     forAll(inputGen) { str =>
-      val result = EventTransformer
-        .transformWithInventory(str)
-        .right
-        .flatMap(event => Transformer.transform(event.event, event.inventory))
+      val result = (for {
+        snowplowEvent <- EitherT.fromEither[Option](
+          EventTransformer
+            .transformWithInventory(str)
+            .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+        indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+      } yield indicativeEvent).value
 
-      result must beRight
+      result must beSome and (result.map(_ must beRight).get)
     }
   }
 
@@ -239,16 +249,40 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       }
     """
 
-    val result = EventTransformer
-      .transformWithInventory(Instances.tsvInput)
-      .right
-      .flatMap(event => Transformer.transform(event.event, event.inventory))
+    val result = (for {
+      snowplowEvent <- EitherT.fromEither[Option](
+        EventTransformer
+          .transformWithInventory(Instances.tsvInput)
+          .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+      indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+    } yield indicativeEvent).value
 
-    result shouldEqual Right(expected.asObject.get)
+    result shouldEqual Some(Right(expected.asObject.get))
 
   }
 
   def e2 = {
+    val event = Instances.input
+      .map {
+        case (fieldName, _) if List("user_id", "domain_userid").contains(fieldName) => fieldName -> ""
+        case a                                                                      => a
+      }
+      .unzip
+      ._2
+      .mkString("\t")
+    val result = (for {
+      snowplowEvent <- EitherT.fromEither[Option](
+        EventTransformer
+          .transformWithInventory(event)
+          .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+      indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+    } yield indicativeEvent).value
+
+    println(result)
+    result must_== None
+  }
+
+  def e3 = {
     val uris = List(
       "iglu:com.getvero/delivered/jsonschema/1-0-0",
       "iglu:com.snowplowanalytics.snowplow.enrichments/weather_enrichment_config/jsonschema/1-0-0",
@@ -258,7 +292,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     Result.foreach(uris)(runTest)
   }
 
-  def e3 = {
+  def e4 = {
     val input = json"""
       {
         "foo": []
@@ -268,7 +302,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
   }
 
-  def e4 = {
+  def e5 = {
     val input = json"""
       {
         "foo": {}

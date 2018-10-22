@@ -16,11 +16,19 @@ package com.snowplowanalytics.indicative
 import scala.collection.JavaConverters._
 
 // cats
+import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 
 // AWS
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent
+
+// circe
+import io.circe.JsonObject
+
+// hammock
+import hammock._
+import hammock.Entity.StringEntity
 
 // This library
 import com.snowplowanalytics.indicative.Transformer.TransformationError
@@ -33,26 +41,38 @@ class LambdaHandler {
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
 
   def recordHandler(event: KinesisEvent): Unit = {
-    val events = event.getRecords.asScala.map { record =>
-      Option(record.getKinesis)
-        .flatMap(underlying => Option(underlying.getData))
-        .filter(_.hasArray)
-        .map(data => new String(data.array, "UTF-8"))
-        .toRight(TransformationError("Could not retrieve underlying Kinesis Record"))
-        .flatMap(line =>
-          EventTransformer
-            .transformWithInventory(line)
-            .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
-        .flatMap(eventWithInventory => Transformer.transform(eventWithInventory.event, eventWithInventory.inventory))
-    }.toList
+    val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
+      .map { record =>
+        val kinesisDataArray: Either[TransformationError, String] = Option(record.getKinesis)
+          .flatMap(underlying => Option(underlying.getData))
+          .filter(_.hasArray)
+          .map(data => new String(data.array, "UTF-8"))
+          .toRight(TransformationError("Could not retrieve underlying Kinesis Record"))
+
+        (for {
+          dataArray <- EitherT.fromEither[Option](kinesisDataArray)
+          snowplowEvent <- EitherT.fromEither[Option](
+            EventTransformer
+              .transformWithInventory(dataArray)
+              .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+          indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+        } yield indicativeEvent).value
+      }
+      .toList
+      .flatten
 
     val (errors, jsons) = events.separate
 
-    Relay
-      .postEventBatch(Transformer.constructBatchEvent(apiKey, jsons))
+    val sendEvents = jsons match {
+      // if there are no jsons, we omit sending a request
+      case Nil => IO.pure(HttpResponse(Status.OK, Map.empty, StringEntity("OK")))
+      case js  => Relay.postEventBatch(Transformer.constructBatchEvent(apiKey, jsons))
+    }
+
+    sendEvents
       .productL(IO(errors.foreach(error => println("[Json transformation error]: " + error))))
       .flatTap(response => IO(if (response.status.code != 200) println("[HTTP error]: " + response.entity.content)))
-      .unsafeRunSync // Lambda logs exceptions nicely
+      .unsafeRunSync()
   }
 
 }
