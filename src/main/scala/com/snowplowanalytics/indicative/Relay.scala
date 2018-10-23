@@ -27,15 +27,16 @@ object Relay {
 
   private implicit val interpreter = Interpreter[IO]
   private val indicativeUri        = uri"https://api.indicative.com/service/event"
+  private val relayHeader          = "Indicative-Client" -> ("Snowplow-Relay-" + BuildInfo.version)
 
   def postSingleEvent(event: JsonObject): IO[HttpResponse] =
     Hammock
-      .request(Method.POST, indicativeUri, Map(), Some(event))
+      .request(Method.POST, indicativeUri, Map(relayHeader), Some(event))
       .exec[IO]
 
   def postEventBatch(batchEvent: JsonObject): IO[HttpResponse] =
     Hammock
-      .request(Method.POST, indicativeUri / "batch", Map(), Some(batchEvent))
+      .request(Method.POST, indicativeUri / "batch", Map(relayHeader), Some(batchEvent))
       .exec[IO]
 
 }
