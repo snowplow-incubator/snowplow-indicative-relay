@@ -21,6 +21,8 @@ lazy val root = project
     scalacOptions := BuildSettings.compilerOptions,
     javacOptions := BuildSettings.javaCompilerOptions
   )
+  .enablePlugins(BuildInfoPlugin)
+  .settings(BuildSettings.buildInfo)
   .settings(BuildSettings.formatting)
   .settings(BuildSettings.assemblyOptions)
   .settings(
