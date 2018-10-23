@@ -20,7 +20,7 @@ object Dependencies {
     val kinesisClient    = "1.9.1"
     val analyticsSdk     = "0.3.0"
     val circe            = "0.10.0"
-    val hammock          = "0.8.5"
+    val hammock          = "0.8.7"
     val specs2           = "4.2.0"
     val scalacheckSchema = "0.1.0"
   }
