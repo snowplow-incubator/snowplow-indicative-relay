@@ -21,6 +21,10 @@ import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
 import sbtassembly._
 import sbtassembly.AssemblyKeys._
 
+// Buildinfo plugin
+import sbtbuildinfo._
+import sbtbuildinfo.BuildInfoKeys._
+
 object BuildSettings {
 
   lazy val compilerOptions = Seq(
@@ -54,6 +58,11 @@ object BuildSettings {
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
       case x => MergeStrategy.first
     }
+  )
+
+  lazy val buildInfo = Seq(
+    buildInfoKeys := Seq[BuildInfoKey](version),
+    buildInfoPackage := "com.snowplowanalytics.indicative"
   )
 
 }
