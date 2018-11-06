@@ -26,10 +26,6 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 // circe
 import io.circe.JsonObject
 
-// hammock
-import hammock._
-import hammock.Entity.StringEntity
-
 // This library
 import com.snowplowanalytics.indicative.Transformer.TransformationError
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
@@ -39,6 +35,7 @@ class LambdaHandler {
   val apiKey: String =
     sys.env.getOrElse("INDICATIVE_API_KEY",
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
+  val indicativeBatchSize = 100
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
@@ -63,15 +60,16 @@ class LambdaHandler {
 
     val (errors, jsons) = events.separate
 
-    val sendEvents = jsons match {
-      // if there are no jsons, we omit sending a request
-      case Nil => IO.pure(HttpResponse(Status.OK, Map.empty, StringEntity("OK")))
-      case js  => Relay.postEventBatch(Transformer.constructBatchEvent(apiKey, jsons))
-    }
+    val sendEvents = jsons
+      .sliding(indicativeBatchSize, indicativeBatchSize)
+      .toList
+      .map(js => Relay.postEventBatch(Transformer.constructBatchEvent(apiKey, jsons)))
+      .sequence
 
     sendEvents
       .productL(IO(errors.foreach(error => println("[Json transformation error]: " + error))))
-      .flatTap(response => IO(if (response.status.code != 200) println("[HTTP error]: " + response.entity.content)))
+      .flatTap(responses =>
+        IO(responses.filter(_.status.code != 200).foreach(r => println("[HTTP error]: " + r.entity.content))))
       .unsafeRunSync()
   }
 
