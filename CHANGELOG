@@ -1,3 +1,12 @@
+Version 0.2.0 (2018-11-12)
+--------------------------
+Send multiple requests in case of batch size exceeding 100 (#16)
+Discard events that do not have a user-identifying field (#12)
+Move the setup guide into the wiki (#5)
+Add an Indicative-Client header (#13)
+Bump hammock to 0.8.7 (#15)
+Bump circe to 0.10.0 (#11)
+
 Version 0.1.0 (2018-08-10)
 --------------------------
 Initial release
