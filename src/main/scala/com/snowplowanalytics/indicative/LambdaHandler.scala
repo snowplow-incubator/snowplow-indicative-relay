@@ -37,7 +37,7 @@ class LambdaHandler {
     sys.env.getOrElse("INDICATIVE_API_KEY",
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
   val indicativeBatchSize = 100
-  val appIdPattern: Regex = sys.env.getOrElse("APP_ID_REGEX", ".%").r
+  val appIdPattern: Regex = sys.env.getOrElse("APP_ID_REGEX", ".*").r
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
