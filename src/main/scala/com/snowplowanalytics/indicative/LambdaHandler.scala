@@ -14,6 +14,7 @@ package com.snowplowanalytics.indicative
 
 // Scala
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 // cats
 import cats.data.EitherT
@@ -36,6 +37,7 @@ class LambdaHandler {
     sys.env.getOrElse("INDICATIVE_API_KEY",
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
   val indicativeBatchSize = 100
+  val appIdPattern: Regex = sys.env.getOrElse("APP_ID_REGEX", ".*").r
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
@@ -52,7 +54,7 @@ class LambdaHandler {
             EventTransformer
               .transformWithInventory(dataArray)
               .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
-          indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+          indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory, appIdPattern))
         } yield indicativeEvent).value
       }
       .toList
