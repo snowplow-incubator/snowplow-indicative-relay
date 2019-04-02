@@ -12,16 +12,13 @@
  */
 package com.snowplowanalytics.indicative
 
-// cats
-import cats.effect.IO
+import java.util.concurrent.TimeUnit
 
-// circe
-import io.circe.JsonObject
-
-// hammock
+import cats.effect.{Clock, IO}
 import hammock._
 import hammock.circe.implicits._
 import hammock.jvm.Interpreter
+import io.circe.JsonObject
 
 object Relay {
 
@@ -34,9 +31,13 @@ object Relay {
       .request(Method.POST, indicativeUri, Map(relayHeader), Some(event))
       .exec[IO]
 
-  def postEventBatch(batchEvent: JsonObject): IO[HttpResponse] =
-    Hammock
-      .request(Method.POST, indicativeUri / "batch", Map(relayHeader), Some(batchEvent))
-      .exec[IO]
+  def postEventBatch(batchEvent: JsonObject)(implicit c: Clock[IO]): IO[(HttpResponse, Long)] =
+    for {
+      before <- c.monotonic(TimeUnit.MILLISECONDS)
+      r <- Hammock
+        .request(Method.POST, indicativeUri / "batch", Map(relayHeader), Some(batchEvent))
+        .exec[IO]
+      after <- c.monotonic(TimeUnit.MILLISECONDS)
+    } yield (r, after - before)
 
 }
