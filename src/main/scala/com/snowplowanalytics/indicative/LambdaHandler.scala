@@ -12,23 +12,16 @@
  */
 package com.snowplowanalytics.indicative
 
-// Scala
 import scala.collection.JavaConverters._
 
-// cats
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{Clock, IO}
 import cats.implicits._
-
-// AWS
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent
-
-// circe
+import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
 import io.circe.JsonObject
 
-// This library
-import com.snowplowanalytics.indicative.Transformer.TransformationError
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
+import Transformer.TransformationError
 
 class LambdaHandler {
 
@@ -36,6 +29,7 @@ class LambdaHandler {
     sys.env.getOrElse("INDICATIVE_API_KEY",
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
   val indicativeBatchSize = 100
+  implicit val c: Clock[IO] = Clock.create[IO]
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
@@ -68,8 +62,16 @@ class LambdaHandler {
 
     sendEvents
       .productL(IO(errors.foreach(error => println("[Json transformation error]: " + error))))
-      .flatTap(responses =>
-        IO(responses.filter(_.status.code != 200).foreach(r => println("[HTTP error]: " + r.entity.content))))
+      .flatTap { responses =>
+        IO {
+          responses.foreach(r => println(s"I spent ${r._2} ms sending events to Indicative"))
+        } >>
+        IO {
+          responses
+          .filter(_._1.status.code != 200)
+          .foreach(r => println("[HTTP error]: " + r._1.entity.content))
+        }
+      }
       .unsafeRunSync()
   }
 
