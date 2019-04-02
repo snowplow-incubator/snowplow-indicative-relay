@@ -15,7 +15,7 @@ lazy val root = project
   .settings(
     name := "indicative-relay",
     organization := "com.snowplowanalytics",
-    version := "0.2.0",
+    version := "0.3.0-rc1",
     description := "A relay transforming Snowplow enriched events into Indicative format",
     scalaVersion := "2.11.12",
     scalacOptions := BuildSettings.compilerOptions,
