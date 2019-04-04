@@ -12,25 +12,16 @@
  */
 package com.snowplowanalytics.indicative
 
-// Java
 import java.time.ZonedDateTime
-import java.util.regex.Pattern
 
-// Scala
 import scala.annotation.tailrec
 
-// cats
 import cats.syntax.either._
-
-// circe
-import io.circe.Json
-
-// Analytics SDK
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.Data
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.JsonShredder
+import io.circe.Json
 
-// This library
-import com.snowplowanalytics.indicative.Transformer.TransformationError
+import Transformer.TransformationError
 
 object FieldsExtraction {
 

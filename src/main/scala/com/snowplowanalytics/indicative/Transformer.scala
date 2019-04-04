@@ -12,20 +12,14 @@
  */
 package com.snowplowanalytics.indicative
 
-// cats
 import cats.data.EitherT
 import cats.instances.either._
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.either._
-
-// circe
-import io.circe.syntax._
-import io.circe.{Json, JsonObject}
-import io.circe.parser.parse
-
-// Analytics SDK
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.Data.InventoryItem
+import io.circe.Json
+import io.circe.parser.parse
 
 /**
  * Contains functions for transforming Snowplow JSON into Indicative JSON. Outputs do not include the apiKey field.
