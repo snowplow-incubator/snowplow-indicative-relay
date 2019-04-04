@@ -27,20 +27,6 @@ import sbtbuildinfo.BuildInfoKeys._
 
 object BuildSettings {
 
-  lazy val compilerOptions = Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-feature",
-    "-language:higherKinds",
-    "-unchecked",
-    "-Ypartial-unification",
-    "-Yno-adapted-args",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Xfuture",
-    "-Xlint"
-  )
-
   lazy val javaCompilerOptions = Seq(
     "-source", "1.8",
     "-target", "1.8"

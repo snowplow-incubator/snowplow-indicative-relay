@@ -17,7 +17,6 @@ import cats.instances.option._
 import cats.syntax.either._
 import io.circe._
 import io.circe.literal._
-import io.circe.syntax._
 import org.json4s.jackson.JsonMethods._
 
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
