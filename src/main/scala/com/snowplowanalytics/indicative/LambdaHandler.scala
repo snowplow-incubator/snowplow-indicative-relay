@@ -19,7 +19,7 @@ import cats.effect.{Clock, IO}
 import cats.implicits._
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
-import io.circe.JsonObject
+import io.circe.Json
 
 import Transformer.TransformationError
 
@@ -35,7 +35,7 @@ class LambdaHandler {
   implicit val c: Clock[IO]      = Clock.create[IO]
 
   def recordHandler(event: KinesisEvent): Unit = {
-    val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
+    val events: List[Either[TransformationError, Json]] = event.getRecords.asScala
       .map { record =>
         val kinesisDataArray: Either[TransformationError, String] = Option(record.getKinesis)
           .flatMap(underlying => Option(underlying.getData))
@@ -79,10 +79,11 @@ class LambdaHandler {
           } >>
             IO {
               responses
-                .filter(_._1.status.code != 200)
-                .foreach(r => println("[HTTP error]: " + r._1.entity.content))
+                .filter(_._1.code != 200)
+                .foreach(r => println(s"[HTTP error]: ${r._1.body}"))
             }
         }).unsafeRunSync()
+    ()
   }
 
 }
