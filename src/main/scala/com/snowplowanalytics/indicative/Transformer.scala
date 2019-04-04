@@ -45,7 +45,7 @@ object Transformer {
   def transform(
     snowplowEvent: String,
     inventory: Set[InventoryItem]
-  ): Option[Either[TransformationError, JsonObject]] =
+  ): Option[Either[TransformationError, Json]] =
     (for {
       snowplowEvent <- EitherT
         .fromEither[Option](parse(snowplowEvent).leftMap(e => TransformationError(e.message)))
@@ -61,7 +61,7 @@ object Transformer {
    * format or a transformation error.
    */
   def snowplowJsonToIndicativeEvent(snowplowJson: Json,
-                                    inventory: Set[InventoryItem]): Option[Either[TransformationError, JsonObject]] = {
+                                    inventory: Set[InventoryItem]): Option[Either[TransformationError, Json]] = {
     val properties = flattenJson(snowplowJson, inventory)
     val eventName  = extractField(properties, "event_name")
     val userId = extractField(properties, "user_id")
@@ -81,8 +81,8 @@ object Transformer {
   private def constructIndicativeJson(eventName: String,
                                       uniqueId: String,
                                       properties: Map[String, Json],
-                                      eventTime: Long): JsonObject =
-    JsonObject(
+                                      eventTime: Long): Json =
+    Json.obj(
       "eventName"     -> Json.fromString(eventName),
       "eventUniqueId" -> Json.fromString(uniqueId),
       "eventTime"     -> Json.fromLong(eventTime),
@@ -101,19 +101,19 @@ object Transformer {
    */
   def constructBatchesOfEvents(
     apiKey: String,
-    events: List[JsonObject],
+    events: List[Json],
     maxBatchSize: Int,
     maxBytesSize: Int
-  ): (List[JsonObject], List[JsonObject]) = {
+  ): (List[Json], List[Json]) = {
     @scala.annotation.tailrec
     def go(
       count: Int,
       size: Int,
-      originalL: List[JsonObject],
-      tmpL: List[JsonObject],
-      newL: List[JsonObject],
-      tooBigL: List[JsonObject]
-    ): (List[JsonObject], List[JsonObject]) =
+      originalL: List[Json],
+      tmpL: List[Json],
+      newL: List[Json],
+      tooBigL: List[Json]
+    ): (List[Json], List[Json]) =
       (originalL, tmpL) match {
         case (Nil, Nil)       => (newL, tooBigL)
         case (Nil, remainder) => (constructBatch(apiKey, remainder) :: newL, tooBigL)
@@ -129,13 +129,13 @@ object Transformer {
     go(0, 0, events, Nil, Nil, Nil)
   }
 
-  private def getSize(json: JsonObject): Int =
-    Json.fromJsonObject(json).noSpaces.getBytes("utf-8").length
+  private def getSize(json: Json): Int =
+    json.noSpaces.getBytes("utf-8").length
 
-  def constructBatch(apiKey: String, events: List[JsonObject]): JsonObject =
-    JsonObject(
+  def constructBatch(apiKey: String, events: List[Json]): Json =
+    Json.obj(
       "apiKey" -> Json.fromString(apiKey),
-      "events" -> Json.fromValues(events.map(_.asJson))
+      "events" -> Json.fromValues(events)
     )
 
 }
