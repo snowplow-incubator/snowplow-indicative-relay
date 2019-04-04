@@ -89,7 +89,50 @@ object Transformer {
       "properties"    -> Json.fromFields(properties)
     )
 
-  def constructBatchEvent(apiKey: String, events: List[JsonObject]): JsonObject =
+  /**
+   * Construct batches of events which respect both the batch size limit (100) and the payload size
+   * limit (1Mb).
+   * @param apiKey the api key to fill the jsons with
+   * @param events the events to form batches from
+   * @param maxBatchSize maxmimum number of elements which can be in a batch
+   * @param maxBytesSize maximum size in bytes of a payload
+   * @return (a series of payloads ready to be sent, events that were too big to be sent (>=1Mb on
+   * their own))
+   */
+  def constructBatchesOfEvents(
+    apiKey: String,
+    events: List[JsonObject],
+    maxBatchSize: Int,
+    maxBytesSize: Int
+  ): (List[JsonObject], List[JsonObject]) = {
+    @scala.annotation.tailrec
+    def go(
+      count: Int,
+      size: Int,
+      originalL: List[JsonObject],
+      tmpL: List[JsonObject],
+      newL: List[JsonObject],
+      tooBigL: List[JsonObject]
+    ): (List[JsonObject], List[JsonObject]) =
+      (originalL, tmpL) match {
+        case (Nil, Nil)       => (newL, tooBigL)
+        case (Nil, remainder) => (constructBatch(apiKey, remainder) :: newL, tooBigL)
+        // we remove unique events that do not fit on their own
+        case (h :: t, _) if getSize(h) >= maxBytesSize =>
+          go(count, size, t, tmpL, newL, h :: tooBigL)
+        case (h :: _, tmp) if (count + 1) > maxBatchSize || (size + getSize(h)) >= maxBytesSize =>
+          go(0, 0, originalL, Nil, constructBatch(apiKey, tmp) :: newL, tooBigL)
+        case (h :: t, tmp) =>
+          go(count + 1, size + getSize(h), t, h :: tmp, newL, tooBigL)
+      }
+
+    go(0, 0, events, Nil, Nil, Nil)
+  }
+
+  private def getSize(json: JsonObject): Int =
+    Json.fromJsonObject(json).noSpaces.getBytes("utf-8").length
+
+  def constructBatch(apiKey: String, events: List[JsonObject]): JsonObject =
     JsonObject(
       "apiKey" -> Json.fromString(apiKey),
       "events" -> Json.fromValues(events.map(_.asJson))

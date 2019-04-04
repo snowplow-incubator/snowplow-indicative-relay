@@ -28,8 +28,11 @@ class LambdaHandler {
   val apiKey: String =
     sys.env.getOrElse("INDICATIVE_API_KEY",
                       throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
+  // Number of events in a payload sent to Indicative is limited to 100
   val indicativeBatchSize = 100
-  implicit val c: Clock[IO] = Clock.create[IO]
+  // Size of a payload sent to Indicative is limited to 1Mb
+  val indicativePayloadBytesSize = 1000000
+  implicit val c: Clock[IO]      = Clock.create[IO]
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, JsonObject]] = event.getRecords.asScala
@@ -54,25 +57,32 @@ class LambdaHandler {
 
     val (errors, jsons) = events.separate
 
-    val sendEvents = jsons
-      .sliding(indicativeBatchSize, indicativeBatchSize)
-      .toList
-      .map(js => Relay.postEventBatch(Transformer.constructBatchEvent(apiKey, jsons)))
+    val (toSend, tooBig) = Transformer
+      .constructBatchesOfEvents(apiKey, jsons, indicativeBatchSize, indicativePayloadBytesSize)
+
+    val tooBigDebugging = IO {
+      tooBig.foreach { e =>
+        println(s"Event was too big to send to Indicative, it exceeds the 1Mb limit: $e")
+      }
+    }
+
+    val sendEvents = toSend
+      .map(js => Relay.postEventBatch(js))
       .sequence
 
-    sendEvents
-      .productL(IO(errors.foreach(error => println("[Json transformation error]: " + error))))
-      .flatTap { responses =>
-        IO {
-          responses.foreach(r => println(s"I spent ${r._2} ms sending events to Indicative"))
-        } >>
-        IO {
-          responses
-          .filter(_._1.status.code != 200)
-          .foreach(r => println("[HTTP error]: " + r._1.entity.content))
-        }
-      }
-      .unsafeRunSync()
+    (tooBigDebugging >>
+      sendEvents
+        .productL(IO(errors.foreach(error => println("[Json transformation error]: " + error))))
+        .flatTap { responses =>
+          IO {
+            responses.foreach(r => println(s"I spent ${r._2} ms sending events to Indicative"))
+          } >>
+            IO {
+              responses
+                .filter(_._1.status.code != 200)
+                .foreach(r => println("[HTTP error]: " + r._1.entity.content))
+            }
+        }).unsafeRunSync()
   }
 
 }
