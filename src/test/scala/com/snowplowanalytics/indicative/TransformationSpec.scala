@@ -15,7 +15,9 @@ package com.snowplowanalytics.indicative
 import cats.data.EitherT
 import cats.instances.option._
 import cats.syntax.either._
+import io.circe._
 import io.circe.literal._
+import io.circe.syntax._
 import org.json4s.jackson.JsonMethods._
 
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
@@ -28,13 +30,14 @@ import org.specs2.matcher.Matchers
 
 class TransformationSpec extends Specification with ScalaCheck with Matchers {
   def is = s2"""
-
-    integration test                                                $e1
-    integration test without user identifying property              $e2
-    should be transformed with real contexts generated from schemas $e3
-    flattenJson should work on empty arrays                         $e4
-    flattenJson should work on empty objects                        $e5
-
+    integration test                                                  $e1
+    integration test without user identifying property                $e2
+    should be transformed with real contexts generated from schemas   $e3
+    flattenJson should work on empty arrays                           $e4
+    flattenJson should work on empty objects                          $e5
+    constructBatchesOfEvents return events as too big                 $e6
+    constructBatchesOfEvents return batches of the specified size     $e7
+    constructBatchesOfEvents return batches according to payload size $e8
   """
 
   val apiKey = "API_KEY"
@@ -310,6 +313,44 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     """
 
     FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
+  }
+
+  def e6 = {
+    val base             = ("a" -> Json.fromString(List.fill(20)("a").mkString))
+    val js               = List(JsonObject(base))
+    val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, 10)
+    toSend shouldEqual Nil
+    tooBig shouldEqual js
+  }
+
+  def e7 = {
+    val base             = ("a" -> Json.fromString("a"))
+    val js               = List.fill(12)(JsonObject(base))
+    val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, 1000)
+    toSend shouldEqual List(
+      JsonObject(
+        "apiKey" -> Json.fromString("a"),
+        "events" -> Json.fromValues(List.fill(10)(Json.obj(base)))
+      ),
+      JsonObject(
+        "apiKey" -> Json.fromString("a"),
+        "events" -> Json.fromValues(List.fill(2)(Json.obj(base)))
+      )
+    )
+    tooBig shouldEqual Nil
+  }
+
+  def e8 = {
+    val base             = ("a" -> Json.fromString(List.fill(20)("a").mkString))
+    val size             = Json.obj(base).noSpaces.getBytes("utf-8").length
+    val js               = List.fill(20)(JsonObject(base))
+    val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, size * 5)
+    val elem = JsonObject(
+      "apiKey" -> Json.fromString("a"),
+      "events" -> Json.fromValues(List.fill(5)(Json.obj(base)))
+    )
+    toSend shouldEqual List(elem, elem, elem, elem)
+    tooBig shouldEqual Nil
   }
 
 }
