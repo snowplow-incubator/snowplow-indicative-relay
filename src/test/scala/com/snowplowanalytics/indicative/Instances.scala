@@ -12,10 +12,6 @@
  */
 package com.snowplowanalytics.indicative
 
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
-
-import io.circe.parser.parse
-
 object Instances {
 
   val unstructJson = """{
