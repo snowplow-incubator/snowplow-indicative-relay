@@ -20,7 +20,8 @@ object Dependencies {
     val kinesisClient    = "1.9.1"
     val analyticsSdk     = "0.3.0"
     val circe            = "0.10.0"
-    val hammock          = "0.8.7"
+    val catsEffect       = "1.2.0"
+    val scalaj           = "2.4.1"
     val specs2           = "4.2.0"
     val scalacheckSchema = "0.1.0"
   }
@@ -34,8 +35,8 @@ object Dependencies {
     val analyticsSdk     = "com.snowplowanalytics" %% "snowplow-scala-analytics-sdk" % V.analyticsSdk
     val circeCore        = "io.circe"              %% "circe-core"                   % V.circe
     val circeParser      = "io.circe"              %% "circe-parser"                 % V.circe
-    val hammockCore      = "com.pepegar"           %% "hammock-core"                 % V.hammock
-    val hammockCirce     = "com.pepegar"           %% "hammock-circe"                % V.hammock
+    val catsEffect       = "org.typelevel"         %% "cats-effect"                  % V.catsEffect
+    val scalaj           = "org.scalaj"            %% "scalaj-http"                  % V.scalaj
     // Tests
     val circeLiteral     = "io.circe"              %% "circe-literal"                % V.circe  % "test"
     val specs2           = "org.specs2"            %% "specs2-core"                  % V.specs2 % "test"

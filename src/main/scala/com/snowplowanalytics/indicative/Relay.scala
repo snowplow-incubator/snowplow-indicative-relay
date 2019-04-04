@@ -15,28 +15,33 @@ package com.snowplowanalytics.indicative
 import java.util.concurrent.TimeUnit
 
 import cats.effect.{Clock, IO}
-import hammock._
-import hammock.circe.implicits._
-import hammock.jvm.Interpreter
-import io.circe.JsonObject
+import scalaj.http._
+import io.circe.Json
 
 object Relay {
 
-  private implicit val interpreter = Interpreter[IO]
-  private val indicativeUri        = uri"https://api.indicative.com/service/event"
-  private val relayHeader          = "Indicative-Client" -> ("Snowplow-Relay-" + BuildInfo.version)
+  private val indicativeUri = "https://api.indicative.com/service/event"
+  private val relayHeader   = "Indicative-Client" -> ("Snowplow-Relay-" + BuildInfo.version)
 
-  def postSingleEvent(event: JsonObject): IO[HttpResponse] =
-    Hammock
-      .request(Method.POST, indicativeUri, Map(relayHeader), Some(event))
-      .exec[IO]
+  def postSingleEvent(event: Json): IO[HttpResponse[String]] =
+    IO {
+      Http(indicativeUri)
+        .postData(event.noSpaces)
+        .header(relayHeader._1, relayHeader._2)
+        .asString
+    }
 
-  def postEventBatch(batchEvent: JsonObject)(implicit c: Clock[IO]): IO[(HttpResponse, Long)] =
+  def postEventBatch(batchEvent: Json)(
+    implicit c: Clock[IO]
+  ): IO[(HttpResponse[String], Long)] =
     for {
       before <- c.monotonic(TimeUnit.MILLISECONDS)
-      r <- Hammock
-        .request(Method.POST, indicativeUri / "batch", Map(relayHeader), Some(batchEvent))
-        .exec[IO]
+      r <- IO {
+        Http(indicativeUri)
+          .postData(batchEvent.noSpaces)
+          .header(relayHeader._1, relayHeader._2)
+          .asString
+      }
       after <- c.monotonic(TimeUnit.MILLISECONDS)
     } yield (r, after - before)
 

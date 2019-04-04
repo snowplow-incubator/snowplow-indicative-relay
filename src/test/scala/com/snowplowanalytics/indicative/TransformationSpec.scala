@@ -260,7 +260,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
     } yield indicativeEvent).value
 
-    result shouldEqual Some(Right(expected.asObject.get))
+    result shouldEqual Some(Right(expected))
 
   }
 
@@ -317,7 +317,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
 
   def e6 = {
     val base             = ("a" -> Json.fromString(List.fill(20)("a").mkString))
-    val js               = List(JsonObject(base))
+    val js               = List(Json.obj(base))
     val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, 10)
     toSend shouldEqual Nil
     tooBig shouldEqual js
@@ -325,7 +325,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
 
   def e7 = {
     val base             = ("a" -> Json.fromString("a"))
-    val js               = List.fill(12)(JsonObject(base))
+    val js               = List.fill(12)(Json.obj(base))
     val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, 1000)
     toSend shouldEqual List(
       JsonObject(
@@ -343,7 +343,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
   def e8 = {
     val base             = ("a" -> Json.fromString(List.fill(20)("a").mkString))
     val size             = Json.obj(base).noSpaces.getBytes("utf-8").length
-    val js               = List.fill(20)(JsonObject(base))
+    val js               = List.fill(20)(Json.obj(base))
     val (toSend, tooBig) = Transformer.constructBatchesOfEvents("a", js, 10, size * 5)
     val elem = JsonObject(
       "apiKey" -> Json.fromString("a"),
