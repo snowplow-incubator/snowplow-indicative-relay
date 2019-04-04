@@ -14,6 +14,7 @@ package com.snowplowanalytics.indicative
 
 import java.util.concurrent.TimeUnit
 
+import cats.data.NonEmptyList
 import cats.effect.{Clock, IO}
 import scalaj.http._
 import io.circe.Json
@@ -21,13 +22,16 @@ import io.circe.Json
 object Relay {
 
   private val indicativeUri = "https://api.indicative.com/service/event"
-  private val relayHeader   = "Indicative-Client" -> ("Snowplow-Relay-" + BuildInfo.version)
+  private val relayHeaders = NonEmptyList.of(
+    ("Indicative-Client", "Snowplow-Relay-" + BuildInfo.version),
+    ("Content-Type", "application/json; charset=utf-8")
+  )
 
   def postSingleEvent(event: Json): IO[HttpResponse[String]] =
     IO {
       Http(indicativeUri)
         .postData(event.noSpaces)
-        .header(relayHeader._1, relayHeader._2)
+        .headers(relayHeaders.head, relayHeaders.tail: _*)
         .asString
     }
 
@@ -37,9 +41,9 @@ object Relay {
     for {
       before <- c.monotonic(TimeUnit.MILLISECONDS)
       r <- IO {
-        Http(indicativeUri)
+        Http(indicativeUri + "/batch")
           .postData(batchEvent.noSpaces)
-          .header(relayHeader._1, relayHeader._2)
+          .headers(relayHeaders.head, relayHeaders.tail: _*)
           .asString
       }
       after <- c.monotonic(TimeUnit.MILLISECONDS)

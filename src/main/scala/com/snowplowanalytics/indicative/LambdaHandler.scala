@@ -83,6 +83,7 @@ class LambdaHandler {
                 .foreach(r => println(s"[HTTP error]: ${r._1.body}"))
             }
         }).unsafeRunSync()
+    ()
   }
 
 }
