@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -24,10 +24,16 @@ import io.circe.Json
 import Transformer.TransformationError
 
 class LambdaHandler {
+  import LambdaHandler._
 
-  val apiKey: String =
-    sys.env.getOrElse("INDICATIVE_API_KEY",
-                      throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
+  val apiKey: String = getConfig("INDICATIVE_API_KEY")
+  val unusedEvents
+    : List[String] = getConfig("UNUSED_EVENTS").split(",").toList // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  val unusedAtomicFields
+    : List[String] = getConfig("UNUSED_ATOMIC_FIELDS").split(",").toList // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
+  val unusedContexts
+    : List[String] = getConfig("UNUSED_CONTEXTS").split(",").toList // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
+
   // Number of events in a payload sent to Indicative is limited to 100
   val indicativeBatchSize = 100
   // Size of a payload sent to Indicative is limited to 1Mb
@@ -49,7 +55,8 @@ class LambdaHandler {
             EventTransformer
               .transformWithInventory(dataArray)
               .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
-          indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+          indicativeEvent <- EitherT(Transformer
+            .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
         } yield indicativeEvent).value
       }
       .toList
@@ -86,4 +93,13 @@ class LambdaHandler {
     ()
   }
 
+}
+
+object LambdaHandler {
+
+  /** Gets the config value from Lambda's environment variables.
+   * Short-circuiting
+   */
+  def getConfig(envVar: String): String =
+    sys.env.getOrElse(envVar, throw new RuntimeException(s"You must provide environment variable $envVar."))
 }
