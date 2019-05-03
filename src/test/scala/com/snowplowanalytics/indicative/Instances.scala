@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -270,6 +270,74 @@ object Instances {
     "true_tstamp"              -> "2018-07-23 00:03:57.886"
   )
 
-  val tsvInput = input.unzip._2.mkString("\t")
+  val tsvInput: String = input.unzip._2.mkString("\t")
 
+  val emptyFilter: String = ""
+
+  val unusedEvents: String = "link_click_test,page_ping"
+
+  val unusedAtomicFields: String = List(
+    "etl_tstamp",
+    "collector_tstamp",
+    "dvce_created_tstamp",
+    "event",
+    "txn_id",
+    "name_tracker",
+    "v_tracker",
+    "v_collector",
+    "v_etl",
+    "user_fingerprint",
+    "geo_latitude",
+    "geo_longitude",
+    "ip_isp",
+    "ip_organization",
+    "ip_domain",
+    "ip_netspeed",
+    "page_urlscheme",
+    "page_urlport",
+    "page_urlquery",
+    "page_urlfragment",
+    "refr_urlscheme",
+    "refr_urlport",
+    "refr_urlquery",
+    "refr_urlfragment",
+    "pp_xoffset_min",
+    "pp_xoffset_max",
+    "pp_yoffset_min",
+    "pp_yoffset_max",
+    "br_features_pdf",
+    "br_features_flash",
+    "br_features_java",
+    "br_features_director",
+    "br_features_quicktime",
+    "br_features_realplayer",
+    "br_features_windowsmedia",
+    "br_features_gears",
+    "br_features_silverlight",
+    "br_cookies",
+    "br_colordepth",
+    "br_viewwidth",
+    "br_viewheight",
+    "dvce_ismobile",
+    "dvce_screenwidth",
+    "dvce_screenheight",
+    "doc_charset",
+    "doc_width",
+    "doc_height",
+    "tr_currency",
+    "mkt_clickid",
+    "etl_tags",
+    "dvce_sent_tstamp",
+    "refr_domain_userid",
+    "refr_device_tstamp",
+    "derived_tstamp",
+    "event_vendor",
+    "event_name",
+    "event_format",
+    "event_version",
+    "event_fingerprint",
+    "true_tstamp"
+  ).mkString(",")
+
+  val unusedContexts: String = "performance_timing,ua_parser_context,web_page"
 }
