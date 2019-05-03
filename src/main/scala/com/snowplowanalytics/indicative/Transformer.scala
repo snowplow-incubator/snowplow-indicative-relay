@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -34,38 +34,71 @@ object Transformer {
    * Transforms Snowplow enriched event string into Indicative event format
    * @param snowplowEvent Snowplow enriched event JSON string
    * @param inventory a set of inventory items returned by EventTransformer
+   * @param unusedEvents a list of events to filter out
+   * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
+   * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
    * @return either an error or a JsonObject containing Indicative event
    */
   def transform(
     snowplowEvent: String,
-    inventory: Set[InventoryItem]
+    inventory: Set[InventoryItem],
+    unusedEvents: List[String],
+    unusedAtomicFields: List[String],
+    unusedContexts: List[String]
   ): Option[Either[TransformationError, Json]] =
     (for {
       snowplowEvent <- EitherT
         .fromEither[Option](parse(snowplowEvent).leftMap(e => TransformationError(e.message)))
-      indicativeEvent <- EitherT(snowplowJsonToIndicativeEvent(snowplowEvent, inventory))
+      indicativeEvent <- EitherT(
+        snowplowJsonToIndicativeEvent(snowplowEvent, inventory, unusedEvents, unusedAtomicFields, unusedContexts))
     } yield indicativeEvent).value
 
   /**
    * Turns a Snowplow enriched event in a json format into a json ready do be consumed by Indicative.
    * @param snowplowJson Snowplow enriched event in a json format
    * @param inventory a set of inventory items returned by EventTransformer
-   * @return None if the event doesn't contain a user identifying field (user_id,
+   * @param unusedEvents a list of events to filter out
+   * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
+   * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
+   * @return None if the event is in the unusedEvents list, or if it doesn't contain a user identifying field (user_id,
    * client_session_user_id, or domain_userid). Otherwise, it returns either an event in Indicative
    * format or a transformation error.
    */
   def snowplowJsonToIndicativeEvent(snowplowJson: Json,
-                                    inventory: Set[InventoryItem]): Option[Either[TransformationError, Json]] = {
-    val properties = flattenJson(snowplowJson, inventory)
-    val eventName  = extractField(properties, "event_name")
-    val userId = extractField(properties, "user_id")
-      .leftFlatMap(_ => extractField(properties, "client_session_user_id"))
-      .leftFlatMap(_ => extractField(properties, "domain_userid"))
+                                    inventory: Set[InventoryItem],
+                                    unusedEvents: List[String],
+                                    unusedAtomicFields: List[String],
+                                    unusedContexts: List[String]): Option[Either[TransformationError, Json]] = {
+    val flattenedEvent = flattenJson(snowplowJson, inventory)
+
+    val eventName = extractField(flattenedEvent, "event_name")
+
+    val filteredEventName =
+      eventName match { // Check if event should be filtered out because it's on the unusedEvents list.
+        case Right(n) if unusedEvents.contains(n) => None
+        case _                                    => Some(eventName)
+      }
+
+    val userId = extractField(flattenedEvent, "user_id")
+      .leftFlatMap(_ => extractField(flattenedEvent, "client_session_user_id"))
+      .leftFlatMap(_ => extractField(flattenedEvent, "domain_userid"))
       .toOption
 
-    val eventTime = extractField(properties, "derived_tstamp").flatMap(timestampToMillis)
+    val eventTime = extractField(flattenedEvent, "derived_tstamp").flatMap(timestampToMillis)
 
-    userId.map { uid =>
+    val unusedContextFields =
+      // unusedContexts can't be empty because either the env var is set or the default is being used.
+      // But it can contain a single empty string, if no contexts are to be filtered out.
+      if (unusedContexts.headOption.contains("")) List()
+      else
+        for {
+          context <- unusedContexts
+          keys    <- flattenedEvent.filterKeys(_.startsWith(context)).keySet
+        } yield keys
+
+    val properties = flattenedEvent -- unusedAtomicFields -- unusedContextFields
+
+    filteredEventName.flatMap(_ => userId).map { uid =>
       (eventName, properties.asRight[TransformationError], eventTime)
         .mapN { case (eName, props, eTime) => constructIndicativeJson(eName, uid, props, eTime) }
         .leftMap(decodingError => TransformationError(decodingError.message))

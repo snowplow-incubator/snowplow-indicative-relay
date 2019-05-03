@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -24,10 +24,17 @@ import io.circe.Json
 import Transformer.TransformationError
 
 class LambdaHandler {
+  import LambdaHandler._
 
-  val apiKey: String =
-    sys.env.getOrElse("INDICATIVE_API_KEY",
-                      throw new RuntimeException("You must provide environment variable INDICATIVE_API_KEY"))
+  val apiKey: String = getConfig[String]("INDICATIVE_API_KEY")(s => s)
+  val unusedEvents
+    : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  val unusedAtomicFields: List[String] = getConfig[List[String]](
+    "UNUSED_ATOMIC_FIELDS",
+    Some(Filters.unusedAtomicFields))(strToList(_)) // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
+  val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
+    strToList(_)) // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
+
   // Number of events in a payload sent to Indicative is limited to 100
   val indicativeBatchSize = 100
   // Size of a payload sent to Indicative is limited to 1Mb
@@ -49,7 +56,8 @@ class LambdaHandler {
             EventTransformer
               .transformWithInventory(dataArray)
               .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
-          indicativeEvent <- EitherT(Transformer.transform(snowplowEvent.event, snowplowEvent.inventory))
+          indicativeEvent <- EitherT(Transformer
+            .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
         } yield indicativeEvent).value
       }
       .toList
@@ -85,5 +93,23 @@ class LambdaHandler {
         }).unsafeRunSync()
     ()
   }
+
+}
+
+object LambdaHandler {
+
+  /** Gets the config value from Lambda's environment variables or from defaults.
+   * Short-circuiting on required env var.
+   */
+  def getConfig[T](envVar: String, default: Option[T] = None)(transform: String => T): T =
+    sys.env
+      .get(envVar)
+      .map(transform)
+      .orElse(default)
+      .getOrElse(throw new RuntimeException(s"You must provide environment variable $envVar."))
+
+  /** Converts a string passed in as env var to a [[List]]. */
+  def strToList(str: String, sep: String = ","): List[String] =
+    str.split(sep).toList
 
 }
