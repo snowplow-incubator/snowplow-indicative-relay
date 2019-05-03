@@ -14,7 +14,7 @@ package com.snowplowanalytics.indicative
 
 object Filters {
 
-  val unusedEvents: String = List(
+  val unusedEvents: List[String] = List(
     "app_heartbeat",
     "app_initialized",
     "app_shutdown",
@@ -39,9 +39,9 @@ object Filters {
     "stream_write_failed",
     "task_update",
     "wd_access_log"
-  ).mkString(",")
+  )
 
-  val unusedAtomicFields: String = List(
+  val unusedAtomicFields: List[String] = List(
     "etl_tstamp",
     "collector_tstamp",
     "dvce_created_tstamp",
@@ -102,9 +102,9 @@ object Filters {
     "event_version",
     "event_fingerprint",
     "true_tstamp"
-  ).mkString(",")
+  )
 
-  val unusedContexts: String = List(
+  val unusedContexts: List[String] = List(
     "application_context",
     "application_error",
     "duplicate",
@@ -115,6 +115,6 @@ object Filters {
     "parent_event",
     "performance_timing",
     "timing"
-  ).mkString(",")
+  )
 
 }

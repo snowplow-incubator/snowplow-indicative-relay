@@ -26,15 +26,14 @@ import Transformer.TransformationError
 class LambdaHandler {
   import LambdaHandler._
 
-  val apiKey: String = getConfig("INDICATIVE_API_KEY", required = true, "")
+  val apiKey: String = getConfig[String]("INDICATIVE_API_KEY")(s => s)
   val unusedEvents
-    : List[String] = getConfig("UNUSED_EVENTS", required = false, Filters.unusedEvents).split(",").toList // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
-  val unusedAtomicFields: List[String] = getConfig("UNUSED_ATOMIC_FIELDS", required = false, Filters.unusedAtomicFields)
-    .split(",")
-    .toList // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
-  val unusedContexts: List[String] = getConfig("UNUSED_CONTEXTS", required = false, Filters.unusedContexts)
-    .split(",")
-    .toList // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
+    : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  val unusedAtomicFields: List[String] = getConfig[List[String]](
+    "UNUSED_ATOMIC_FIELDS",
+    Some(Filters.unusedAtomicFields))(strToList(_)) // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
+  val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
+    strToList(_)) // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
 
   // Number of events in a payload sent to Indicative is limited to 100
   val indicativeBatchSize = 100
@@ -102,9 +101,15 @@ object LambdaHandler {
   /** Gets the config value from Lambda's environment variables or from defaults.
    * Short-circuiting on required env var.
    */
-  def getConfig(envVar: String, required: Boolean, default: String): String =
-    if (required)
-      sys.env.getOrElse(envVar, throw new RuntimeException(s"You must provide environment variable $envVar."))
-    else sys.env.getOrElse(envVar, default)
+  def getConfig[T](envVar: String, default: Option[T] = None)(transform: String => T): T =
+    sys.env
+      .get(envVar)
+      .map(transform)
+      .orElse(default)
+      .getOrElse(throw new RuntimeException(s"You must provide environment variable $envVar."))
+
+  /** Converts a string passed in as env var to a [[List]]. */
+  def strToList(str: String, sep: String = ","): List[String] =
+    str.split(sep).toList
 
 }
