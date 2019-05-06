@@ -80,8 +80,7 @@ class LambdaHandler {
     ()
   }
 
-  def transform(
-      record: KinesisEvent.KinesisEventRecord): Option[Either[TransformationError, Json]] = {
+  def transform(record: KinesisEvent.KinesisEventRecord): Option[Either[TransformationError, Json]] = {
     val kinesisDataArray: Either[TransformationError, String] = Option(record.getKinesis)
       .flatMap(underlying => Option(underlying.getData))
       .filter(_.hasArray)
@@ -94,8 +93,9 @@ class LambdaHandler {
         EventTransformer
           .transformWithInventory(dataArray)
           .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
-      indicativeEvent <- EitherT(Transformer
-        .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+      indicativeEvent <- EitherT(
+        Transformer
+          .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
     } yield indicativeEvent).value
   }
 
