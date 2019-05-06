@@ -1,3 +1,12 @@
+Version 0.3.0 (2019-05-XX)
+--------------------------
+Limit fields and contexts (#23)
+Use sbt-tpolecat (#21)
+Move to scalaj (#20)
+Limit payload size (#22)
+Add time measurements (#25)
+Extend copyright to 2019 (#26)
+
 Version 0.2.0 (2018-11-12)
 --------------------------
 Send multiple requests in case of batch size exceeding 100 (#16)
