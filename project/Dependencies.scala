@@ -16,7 +16,7 @@ object Dependencies {
 
   object V {
     val awsLambdaCore    = "1.2.0"
-    val awsLambdaEvents  = "2.2.2"
+    val awsLambdaEvents  = "2.2.6"
     val kinesisClient    = "1.9.3"
     val analyticsSdk     = "0.3.0"
     val circe            = "0.10.0"
