@@ -21,7 +21,7 @@ object Dependencies {
     val analyticsSdk     = "0.3.0"
     val circe            = "0.11.1"
     val catsEffect       = "1.4.0"
-    val scalaj           = "2.4.1"
+    val scalaj           = "2.4.2"
     val specs2           = "4.2.0"
     val scalacheckSchema = "0.1.0"
   }
