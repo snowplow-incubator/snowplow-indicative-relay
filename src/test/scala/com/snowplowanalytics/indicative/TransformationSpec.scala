@@ -48,6 +48,16 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
 
       FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
     }
+
+    "should not parse null values as \"null\"" >> {
+      val input = json"""
+      {
+        "foo": null
+      }
+      """
+
+      FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
+    }
   }
 
   "getUserId" >> {
