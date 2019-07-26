@@ -26,6 +26,7 @@ import Transformer.TransformationError
 class LambdaHandler {
   import LambdaHandler._
 
+  val indicativeUri: String = getConfig[String]("INDICATIVE_URI", Some(Relay.defaultIndicativeUri))(s => s)
   val apiKey: String = getConfig[String]("INDICATIVE_API_KEY")(s => s)
   val unusedEvents
     : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
@@ -62,7 +63,7 @@ class LambdaHandler {
     }
 
     val sendEvents = toSend
-      .traverse(Relay.postEventBatch)
+      .traverse(Relay.postEventBatch(indicativeUri))
 
     (tooBigDebugging >>
       sendEvents
