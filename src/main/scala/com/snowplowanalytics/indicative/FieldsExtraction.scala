@@ -65,7 +65,10 @@ object FieldsExtraction {
       json.asArray
         .map(vector => if (vector.isEmpty) accumulator else iterate(key, vector.head, accumulator))
         .orElse(json.asObject.map(obj => iterateObject(key, obj.toList, accumulator)))
-        .getOrElse(accumulator.updated(key, json))
+        .getOrElse(
+          json.asNull
+            .map(_ => accumulator)
+            .getOrElse(accumulator.updated(key, json)))
 
     iterate("", json, Map.empty)
   }
