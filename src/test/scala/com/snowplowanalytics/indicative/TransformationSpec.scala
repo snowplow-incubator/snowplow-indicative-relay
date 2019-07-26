@@ -40,6 +40,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     constructBatchesOfEvents return events as too big                 $e9
     constructBatchesOfEvents return batches of the specified size     $e10
     constructBatchesOfEvents return batches according to payload size $e11
+    flattenJson should not parse null values as "null"                $e12
   """
 
   val apiKey = "API_KEY"
@@ -208,6 +209,16 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     )
     toSend shouldEqual List(elem, elem, elem, elem)
     tooBig shouldEqual Nil
+  }
+
+  def e12 = {
+    val input = json"""
+      {
+        "foo": null
+      }
+    """
+
+    FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
   }
 
 }
