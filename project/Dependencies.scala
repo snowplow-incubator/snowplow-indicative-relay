@@ -22,7 +22,7 @@ object Dependencies {
     val circe            = "0.11.1"
     val catsEffect       = "1.3.1"
     val scalaj           = "2.4.2"
-    val specs2           = "4.5.1"
+    val specs2           = "4.7.0"
     val scalacheckSchema = "0.1.0"
   }
 
