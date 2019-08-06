@@ -40,6 +40,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     constructBatchesOfEvents return events as too big                 $e9
     constructBatchesOfEvents return batches of the specified size     $e10
     constructBatchesOfEvents return batches according to payload size $e11
+    integration test for mobile events $e12
   """
 
   val apiKey = "API_KEY"
@@ -208,6 +209,24 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     )
     toSend shouldEqual List(elem, elem, elem, elem)
     tooBig shouldEqual Nil
+  }
+
+  def e12 = {
+    val expected = Expectations.mobileIndicativeEvent
+    val event = Instances.Mobile.input
+      .map {
+        case (fieldName, _) if List("user_id", "domain_userid").contains(fieldName) => fieldName -> ""
+        case a                                                                      => a
+      }
+      .unzip
+      ._2
+      .mkString("\t")
+    val unusedEvents: List[String]       = Instances.emptyFilter.split(",").toList
+    val unusedAtomicFields: List[String] = Instances.emptyFilter.split(",").toList
+    val unusedContexts: List[String]     = Instances.emptyFilter.split(",").toList
+    val result                           = getTransformationResult(event, unusedEvents, unusedAtomicFields, unusedContexts)
+
+    result shouldEqual Some(Right(expected))
   }
 
 }

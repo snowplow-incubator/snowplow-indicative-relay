@@ -80,7 +80,7 @@ object Transformer {
       }
 
     val userId = extractField(flattenedEvent, "user_id")
-      .leftFlatMap(_ => extractField(flattenedEvent, "client_session_user_id"))
+      .leftFlatMap(_ => extractField(flattenedEvent, "client_session_userId"))
       .leftFlatMap(_ => extractField(flattenedEvent, "domain_userid"))
       .toOption
 
