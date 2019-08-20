@@ -45,4 +45,7 @@ object Utils {
       ]
     }"""
 
+  def getTsvInput(input: List[(String, String)]): String =
+    input.map(_._2).mkString("\t")
+
 }
