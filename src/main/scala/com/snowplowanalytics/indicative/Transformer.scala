@@ -79,10 +79,7 @@ object Transformer {
         case _                                    => Some(eventName)
       }
 
-    val userId = extractField(flattenedEvent, "user_id")
-      .leftFlatMap(_ => extractField(flattenedEvent, "client_session_userId"))
-      .leftFlatMap(_ => extractField(flattenedEvent, "domain_userid"))
-      .toOption
+    val userId = getUserId(flattenedEvent)
 
     val eventTime = extractField(flattenedEvent, "derived_tstamp").flatMap(timestampToMillis)
 
@@ -104,6 +101,12 @@ object Transformer {
         .leftMap(decodingError => TransformationError(decodingError.message))
     }
   }
+
+  def getUserId(flattenedEvent: Map[String, Json]): Option[String] =
+    extractField(flattenedEvent, "user_id")
+      .leftFlatMap(_ => extractField(flattenedEvent, "client_session_userId"))
+      .leftFlatMap(_ => extractField(flattenedEvent, "domain_userid"))
+      .toOption
 
   private def constructIndicativeJson(eventName: String,
                                       uniqueId: String,
