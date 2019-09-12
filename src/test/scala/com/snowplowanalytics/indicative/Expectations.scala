@@ -617,4 +617,8 @@ object Expectations {
     }
   }"""
 
+  val userId              = "jon.doe@email.com"
+  val clientSessionUserId = "d1a1abd2-ad91-4427-877b-b5b6a2d59d7a"
+  val domainUserid        = "bc2e92ec6c204a14"
+
 }
