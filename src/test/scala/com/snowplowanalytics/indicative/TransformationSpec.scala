@@ -18,11 +18,9 @@ import cats.syntax.either._
 import io.circe._
 import io.circe.literal._
 import org.json4s.jackson.JsonMethods._
-
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
+import com.snowplowanalytics.snowplow.analytics.scalasdk.json.{Data, EventTransformer}
 import com.snowplowanalytics.indicative.Transformer._
 import com.snowplowanalytics.indicative.Utils._
-
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.scalacheck.Prop.forAll
@@ -49,6 +47,67 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       """
 
       FieldsExtraction.flattenJson(input, Set.empty) shouldEqual Map.empty
+    }
+  }
+
+  "getUserId" >> {
+    def getTransformedSnowplowEvent(tsvInput: String): Data.EventWithInventory =
+      (for {
+        snowplowEvent <- EventTransformer.transformWithInventory(tsvInput)
+      } yield snowplowEvent).right.get
+
+    "should return user_id if that is available" >> {
+      val tsvInput = getTsvInput(Instances.Web.input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+      val expected       = Option(Expectations.userId)
+
+      getUserId(flattenedEvent) shouldEqual expected
+    }
+
+    "should return client_session_userId if that is available and there is no user_id" >> {
+      val input = Instances.Mobile.input.map {
+        case (key, value) if key == "user_id" => (key, "")
+        case (key, value)                     => (key, value)
+      }
+      val tsvInput = getTsvInput(input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+      val expected       = Option(Expectations.clientSessionUserId)
+
+      getUserId(flattenedEvent) shouldEqual expected
+    }
+    "should return domain_userid if that is available and there is no user_id or client_session_userId" >> {
+      val input = Instances.Web.input.map {
+        case (key, value) if key == "user_id" => (key, "")
+        case (key, value)                     => (key, value)
+      }
+      val tsvInput = getTsvInput(input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+      val expected       = Option(Expectations.domainUserid)
+
+      getUserId(flattenedEvent) shouldEqual expected
+    }
+    "should return None if there is no user_id, client_session_userId or domain_userid" >> {
+      val input = Instances.Web.input.map {
+        case (key, value) if key == "user_id"       => (key, "")
+        case (key, value) if key == "domain_userid" => (key, "")
+        case (key, value)                           => (key, value)
+      }
+      val tsvInput = getTsvInput(input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+
+      getUserId(flattenedEvent) shouldEqual None
     }
   }
 
