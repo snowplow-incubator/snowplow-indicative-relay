@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -15,10 +15,9 @@ lazy val root = project
   .settings(
     name := "indicative-relay",
     organization := "com.snowplowanalytics",
-    version := "0.2.0",
+    version := "0.4.0",
     description := "A relay transforming Snowplow enriched events into Indicative format",
     scalaVersion := "2.11.12",
-    scalacOptions := BuildSettings.compilerOptions,
     javacOptions := BuildSettings.javaCompilerOptions
   )
   .enablePlugins(BuildInfoPlugin)
@@ -33,8 +32,8 @@ lazy val root = project
       Dependencies.Libraries.analyticsSdk,
       Dependencies.Libraries.circeCore,
       Dependencies.Libraries.circeParser,
-      Dependencies.Libraries.hammockCore,
-      Dependencies.Libraries.hammockCirce,
+      Dependencies.Libraries.catsEffect,
+      Dependencies.Libraries.scalaj,
       Dependencies.Libraries.circeLiteral,
       Dependencies.Libraries.specs2,
       Dependencies.Libraries.specs2ScalaCheck,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,31 +12,41 @@
  */
 package com.snowplowanalytics.indicative
 
-// cats
-import cats.effect.IO
+import java.util.concurrent.TimeUnit
 
-// circe
-import io.circe.JsonObject
-
-// hammock
-import hammock._
-import hammock.circe.implicits._
-import hammock.jvm.Interpreter
+import cats.data.NonEmptyList
+import cats.effect.{Clock, IO}
+import scalaj.http._
+import io.circe.Json
 
 object Relay {
 
-  private implicit val interpreter = Interpreter[IO]
-  private val indicativeUri        = uri"https://api.indicative.com/service/event"
-  private val relayHeader          = "Indicative-Client" -> ("Snowplow-Relay-" + BuildInfo.version)
+  val defaultIndicativeUri = "https://api.indicative.com/service/event"
+  private val relayHeaders = NonEmptyList.of(
+    ("Indicative-Client", "Snowplow-Relay-" + BuildInfo.version),
+    ("Content-Type", "application/json; charset=utf-8")
+  )
 
-  def postSingleEvent(event: JsonObject): IO[HttpResponse] =
-    Hammock
-      .request(Method.POST, indicativeUri, Map(relayHeader), Some(event))
-      .exec[IO]
+  def postSingleEvent(indicativeUri: String)(event: Json): IO[HttpResponse[String]] =
+    IO {
+      Http(indicativeUri)
+        .postData(event.noSpaces)
+        .headers(relayHeaders.head, relayHeaders.tail: _*)
+        .asString
+    }
 
-  def postEventBatch(batchEvent: JsonObject): IO[HttpResponse] =
-    Hammock
-      .request(Method.POST, indicativeUri / "batch", Map(relayHeader), Some(batchEvent))
-      .exec[IO]
+  def postEventBatch(indicativeUri: String)(batchEvent: Json)(
+    implicit c: Clock[IO]
+  ): IO[(HttpResponse[String], Long)] =
+    for {
+      before <- c.monotonic(TimeUnit.MILLISECONDS)
+      r <- IO {
+        Http(indicativeUri + "/batch")
+          .postData(batchEvent.noSpaces)
+          .headers(relayHeaders.head, relayHeaders.tail: _*)
+          .asString
+      }
+      after <- c.monotonic(TimeUnit.MILLISECONDS)
+    } yield (r, after - before)
 
 }

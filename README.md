@@ -4,14 +4,14 @@
 [![License][license-image]][license]
 
 Snowplow Indicative Relay is an AWS Lambda function that reads Snowplow enriched events
-from a Kinesis Stream and transfers them to Indicative. It processes events in batches, which
+from a Kinesis Stream and transfers them to Indicative. It processes events in batches, whose
 size depends on your AWS Lambda configuration.
 
 Detailed setup instructions, as well as more technical information, are provided on the [wiki page][wiki-page].
 
 ## Copyright and license
 
-Snowplow is copyright 2018-2018 Snowplow Analytics Ltd.
+Snowplow is copyright 2018-2019 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0][license] (the "License"); you may not use this software except in compliance with the License.
 
@@ -20,7 +20,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [travis-image]: https://travis-ci.org/snowplow-incubator/snowplow-indicative-relay.svg?branch=master
 [travis]: https://travis-ci.org/snowplow-incubator/snowplow-indicative-relay
 
-[release-image]: https://img.shields.io/badge/release-0.2.0-orange.svg?style=flat
+[release-image]: https://img.shields.io/badge/release-0.4.0-orange.svg?style=flat
 [release]: https://github.com/snowplow-incubator/snowplow-indicative-relay/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat

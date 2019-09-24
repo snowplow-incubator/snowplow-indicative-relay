@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -16,12 +16,13 @@ object Dependencies {
 
   object V {
     val awsLambdaCore    = "1.2.0"
-    val awsLambdaEvents  = "2.2.2"
-    val kinesisClient    = "1.9.1"
-    val analyticsSdk     = "0.3.0"
-    val circe            = "0.10.0"
-    val hammock          = "0.8.7"
-    val specs2           = "4.2.0"
+    val awsLambdaEvents  = "2.2.7"
+    val kinesisClient    = "1.11.2"
+    val analyticsSdk     = "0.3.2"
+    val circe            = "0.11.1"
+    val catsEffect       = "1.4.0"
+    val scalaj           = "2.4.2"
+    val specs2           = "4.5.1"
     val scalacheckSchema = "0.1.0"
   }
 
@@ -34,8 +35,8 @@ object Dependencies {
     val analyticsSdk     = "com.snowplowanalytics" %% "snowplow-scala-analytics-sdk" % V.analyticsSdk
     val circeCore        = "io.circe"              %% "circe-core"                   % V.circe
     val circeParser      = "io.circe"              %% "circe-parser"                 % V.circe
-    val hammockCore      = "com.pepegar"           %% "hammock-core"                 % V.hammock
-    val hammockCirce     = "com.pepegar"           %% "hammock-circe"                % V.hammock
+    val catsEffect       = "org.typelevel"         %% "cats-effect"                  % V.catsEffect
+    val scalaj           = "org.scalaj"            %% "scalaj-http"                  % V.scalaj
     // Tests
     val circeLiteral     = "io.circe"              %% "circe-literal"                % V.circe  % "test"
     val specs2           = "org.specs2"            %% "specs2-core"                  % V.specs2 % "test"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -26,20 +26,6 @@ import sbtbuildinfo._
 import sbtbuildinfo.BuildInfoKeys._
 
 object BuildSettings {
-
-  lazy val compilerOptions = Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-feature",
-    "-language:higherKinds",
-    "-unchecked",
-    "-Ypartial-unification",
-    "-Yno-adapted-args",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Xfuture",
-    "-Xlint"
-  )
 
   lazy val javaCompilerOptions = Seq(
     "-source", "1.8",

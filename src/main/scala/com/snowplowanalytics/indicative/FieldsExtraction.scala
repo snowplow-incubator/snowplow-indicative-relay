@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2018 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,25 +12,16 @@
  */
 package com.snowplowanalytics.indicative
 
-// Java
 import java.time.ZonedDateTime
-import java.util.regex.Pattern
 
-// Scala
 import scala.annotation.tailrec
 
-// cats
 import cats.syntax.either._
-
-// circe
-import io.circe.Json
-
-// Analytics SDK
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.Data
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.JsonShredder
+import io.circe.Json
 
-// This library
-import com.snowplowanalytics.indicative.Transformer.TransformationError
+import Transformer.TransformationError
 
 object FieldsExtraction {
 
@@ -74,7 +65,10 @@ object FieldsExtraction {
       json.asArray
         .map(vector => if (vector.isEmpty) accumulator else iterate(key, vector.head, accumulator))
         .orElse(json.asObject.map(obj => iterateObject(key, obj.toList, accumulator)))
-        .getOrElse(accumulator.updated(key, json))
+        .getOrElse(
+          json.asNull
+            .map(_ => accumulator)
+            .getOrElse(accumulator.updated(key, json)))
 
     iterate("", json, Map.empty)
   }
