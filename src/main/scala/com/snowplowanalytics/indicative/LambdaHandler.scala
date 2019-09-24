@@ -30,6 +30,8 @@ class LambdaHandler {
   val apiKey: String        = getConfig[String]("INDICATIVE_API_KEY")(s                               => s)
   val unusedEvents
     : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  val unusedAppIds
+    : List[String] = getConfig[List[String]]("UNUSED_APPIDS", Some(Filters.unusedAppIds))(strToList(_)) // eg, `UNUSED_APPIDS=dev,qa,test`
   val unusedAtomicFields: List[String] = getConfig[List[String]](
     "UNUSED_ATOMIC_FIELDS",
     Some(Filters.unusedAtomicFields))(strToList(_)) // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
@@ -96,7 +98,12 @@ class LambdaHandler {
           .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
       indicativeEvent <- EitherT(
         Transformer
-          .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+          .transform(snowplowEvent.event,
+                     snowplowEvent.inventory,
+                     unusedEvents,
+                     unusedAtomicFields,
+                     unusedContexts,
+                     unusedAppIds))
     } yield indicativeEvent).value
   }
 

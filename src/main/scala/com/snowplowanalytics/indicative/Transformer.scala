@@ -37,6 +37,7 @@ object Transformer {
    * @param unusedEvents a list of events to filter out
    * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
    * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
+   * @param unusedAppIds a list of app ids that should be filtered out
    * @return either an error or a JsonObject containing Indicative event
    */
   def transform(
@@ -44,13 +45,19 @@ object Transformer {
     inventory: Set[InventoryItem],
     unusedEvents: List[String],
     unusedAtomicFields: List[String],
-    unusedContexts: List[String]
+    unusedContexts: List[String],
+    unusedAppIds: List[String]
   ): Option[Either[TransformationError, Json]] =
     (for {
       snowplowEvent <- EitherT
         .fromEither[Option](parse(snowplowEvent).leftMap(e => TransformationError(e.message)))
       indicativeEvent <- EitherT(
-        snowplowJsonToIndicativeEvent(snowplowEvent, inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+        snowplowJsonToIndicativeEvent(snowplowEvent,
+                                      inventory,
+                                      unusedEvents,
+                                      unusedAtomicFields,
+                                      unusedContexts,
+                                      unusedAppIds))
     } yield indicativeEvent).value
 
   /**
@@ -60,6 +67,7 @@ object Transformer {
    * @param unusedEvents a list of events to filter out
    * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
    * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
+   * @param unusedAppIds a list of app ids that should be filtered out
    * @return None if the event is in the unusedEvents list, or if it doesn't contain a user identifying field (user_id,
    * client_session_user_id, or domain_userid). Otherwise, it returns either an event in Indicative
    * format or a transformation error.
@@ -68,7 +76,8 @@ object Transformer {
                                     inventory: Set[InventoryItem],
                                     unusedEvents: List[String],
                                     unusedAtomicFields: List[String],
-                                    unusedContexts: List[String]): Option[Either[TransformationError, Json]] = {
+                                    unusedContexts: List[String],
+                                    unusedAppIds: List[String]): Option[Either[TransformationError, Json]] = {
     val flattenedEvent = flattenJson(snowplowJson, inventory)
 
     val eventName = extractField(flattenedEvent, "event_name")
@@ -77,6 +86,14 @@ object Transformer {
       eventName match { // Check if event should be filtered out because it's on the unusedEvents list.
         case Right(n) if unusedEvents.contains(n) => None
         case _                                    => Some(eventName)
+      }
+
+    val appId = extractField(flattenedEvent, "app_id")
+
+    val filteredAppId =
+      appId match { // Check if app id should be filtered out because it's on the unusedAppIds list.
+        case Right(n) if unusedAppIds.contains(n) => None
+        case _                                    => Some(appId)
       }
 
     val userId = getUserId(flattenedEvent)
@@ -95,11 +112,15 @@ object Transformer {
 
     val properties = flattenedEvent -- unusedAtomicFields -- unusedContextFields
 
-    filteredEventName.flatMap(_ => userId).map { uid =>
-      (eventName, properties.asRight[TransformationError], eventTime)
-        .mapN { case (eName, props, eTime) => constructIndicativeJson(eName, uid, props, eTime) }
-        .leftMap(decodingError => TransformationError(decodingError.message))
-    }
+    filteredEventName.flatMap(
+      _ =>
+        (
+          filteredAppId.flatMap(_ => userId).map { uid =>
+            (eventName, properties.asRight[TransformationError], eventTime)
+              .mapN { case (eName, props, eTime) => constructIndicativeJson(eName, uid, props, eTime) }
+              .leftMap(decodingError => TransformationError(decodingError.message))
+          }
+      ))
   }
 
   def getUserId(flattenedEvent: Map[String, Json]): Option[String] =

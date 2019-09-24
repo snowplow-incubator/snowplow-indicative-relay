@@ -409,6 +409,8 @@ object Instances {
 
     val unusedContexts: String = "performance_timing,ua_parser_context,web_page"
 
+    val unusedAppIds: String = "angry-birds"
+
   }
 
 }
