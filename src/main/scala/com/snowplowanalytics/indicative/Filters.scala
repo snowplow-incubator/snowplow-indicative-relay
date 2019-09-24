@@ -117,4 +117,13 @@ object Filters {
     "timing"
   )
 
+  val unusedAppIds: List[String] = List(
+    "dev",
+    "development",
+    "test",
+    "testing",
+    "uat",
+    "qa"
+  )
+
 }
