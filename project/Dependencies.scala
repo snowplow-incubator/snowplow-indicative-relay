@@ -16,13 +16,13 @@ object Dependencies {
 
   object V {
     val awsLambdaCore    = "1.2.0"
-    val awsLambdaEvents  = "2.2.2"
-    val kinesisClient    = "1.9.1"
-    val analyticsSdk     = "0.3.0"
-    val circe            = "0.10.0"
-    val catsEffect       = "1.2.0"
-    val scalaj           = "2.4.1"
-    val specs2           = "4.2.0"
+    val awsLambdaEvents  = "2.2.7"
+    val kinesisClient    = "1.11.2"
+    val analyticsSdk     = "0.3.2"
+    val circe            = "0.11.1"
+    val catsEffect       = "1.4.0"
+    val scalaj           = "2.4.2"
+    val specs2           = "4.5.1"
     val scalacheckSchema = "0.1.0"
   }
 
