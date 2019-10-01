@@ -1,3 +1,17 @@
+Version 0.4.0 (2019-09-18)
+--------------------------
+Fix typo in user ID field name for mobile events (#57)
+Add option to configure Indicative's API URI via environment variable (#58)
+Exclude null values from being included in Indicative event payload (#63)
+Refactor unit tests to use mutable Specification (#59)
+Make testing for a user identifier a separate function that can be unit-tested (#62)
+Bump sbt to 1.3.0 (#64)
+Bump sbt-tpolecat to 0.1.8 (#65)
+Bump amazon-kinesis-client to 1.11.2 (#66)
+Bump aws-lambda-java-events to 2.2.7 (#67)
+Bump cats-effect to 1.4.0 (#68)
+Bump version to 0.4.0 (#75)
+
 Version 0.3.0 (2019-05-13)
 --------------------------
 Limit fields and contexts (#23)

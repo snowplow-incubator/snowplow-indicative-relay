@@ -21,13 +21,13 @@ import io.circe.Json
 
 object Relay {
 
-  private val indicativeUri = "https://api.indicative.com/service/event"
+  val defaultIndicativeUri = "https://api.indicative.com/service/event"
   private val relayHeaders = NonEmptyList.of(
     ("Indicative-Client", "Snowplow-Relay-" + BuildInfo.version),
     ("Content-Type", "application/json; charset=utf-8")
   )
 
-  def postSingleEvent(event: Json): IO[HttpResponse[String]] =
+  def postSingleEvent(indicativeUri: String)(event: Json): IO[HttpResponse[String]] =
     IO {
       Http(indicativeUri)
         .postData(event.noSpaces)
@@ -35,7 +35,7 @@ object Relay {
         .asString
     }
 
-  def postEventBatch(batchEvent: Json)(
+  def postEventBatch(indicativeUri: String)(batchEvent: Json)(
     implicit c: Clock[IO]
   ): IO[(HttpResponse[String], Long)] =
     for {
