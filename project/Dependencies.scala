@@ -19,7 +19,7 @@ object Dependencies {
     val awsLambdaEvents  = "2.2.7"
     val kinesisClient    = "1.11.2"
     val analyticsSdk     = "0.3.2"
-    val circe            = "0.11.1"
+    val circe            = "0.11.2"
     val catsEffect       = "1.4.0"
     val scalaj           = "2.4.2"
     val specs2           = "4.5.1"
