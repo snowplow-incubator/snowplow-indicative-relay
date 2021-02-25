@@ -28,14 +28,19 @@ class LambdaHandler {
 
   val indicativeUri: String = getConfig[String]("INDICATIVE_URI", Some(Relay.defaultIndicativeUri))(s => s)
   val apiKey: String        = getConfig[String]("INDICATIVE_API_KEY")(s                               => s)
-  val unusedEvents
-    : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
-  val unusedAtomicFields: List[String] = getConfig[List[String]](
+
+  private val unusedEvents: List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(
+    strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  private val unusedAtomicFields: List[String] = getConfig[List[String]](
     "UNUSED_ATOMIC_FIELDS",
     Some(Filters.unusedAtomicFields))(strToList(_)) // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
-  val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
+  private val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
     strToList(_)) // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
+  private val structuredEventNameField: String =
+    getConfig[String]("STRUCTURED_EVENT_NAME_FIELD", Some(Relay.defaultStructuredEventName))(s => s)
 
+  val transformOptions: TransformOptions =
+    TransformOptions(unusedEvents, unusedAtomicFields, unusedContexts, structuredEventNameField)
   // Number of events in a payload sent to Indicative is limited to 100
   val indicativeBatchSize = 100
   // Size of a payload sent to Indicative is limited to 1Mb
@@ -96,7 +101,7 @@ class LambdaHandler {
           .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
       indicativeEvent <- EitherT(
         Transformer
-          .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+          .transform(snowplowEvent.event, snowplowEvent.inventory, transformOptions))
     } yield indicativeEvent).value
   }
 
