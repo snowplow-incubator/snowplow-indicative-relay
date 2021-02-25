@@ -12,6 +12,8 @@
  */
 package com.snowplowanalytics.indicative
 
+import com.snowplowanalytics.indicative.Transformer.TransformationOptions
+
 object Instances {
 
   object Common {
@@ -277,14 +279,21 @@ object Instances {
     }"""
 
     val input = Common.inputStub.map {
-      case (key, value) if key == "platform"         => (key, "web")
-      case (key, value) if key == "contexts"         => (key, contextsJson)
-      case (key, value) if key == "unstruct_event"   => (key, unstructJson)
-      case (key, value) if key == "derived_contexts" => (key, Common.derivedContextsJson)
-      case (key, value) if key == "event_name"       => (key, "link_click")
-      case (key, value)                              => (key, value)
+      case (key, _) if key == "platform"         => (key, "web")
+      case (key, _) if key == "contexts"         => (key, contextsJson)
+      case (key, _) if key == "unstruct_event"   => (key, unstructJson)
+      case (key, _) if key == "derived_contexts" => (key, Common.derivedContextsJson)
+      case (key, _) if key == "event_name"       => (key, "link_click")
+      case (key, value)                          => (key, value)
     }
 
+    val structInput = input.map {
+      case (key, _) if key == "se_action"   => (key, "struct link click action")
+      case (key, _) if key == "se_category" => (key, "struct link click category")
+      case (key, _) if key == "event_name"  => (key, "event")
+      case (key, _) if key == "event"       => (key, "struct")
+      case (key, value)                     => (key, value)
+    }
   }
 
   object Mobile {
@@ -328,12 +337,12 @@ object Instances {
     }"""
 
     val input = Common.inputStub.map {
-      case (key, value) if key == "platform"         => (key, "mob")
-      case (key, value) if key == "contexts"         => (key, contextsJson)
-      case (key, value) if key == "unstruct_event"   => (key, unstructJson)
-      case (key, value) if key == "derived_contexts" => (key, Common.derivedContextsJson)
-      case (key, value) if key == "event_name"       => (key, "mobile_event")
-      case (key, value)                              => (key, value)
+      case (key, _) if key == "platform"         => (key, "mob")
+      case (key, _) if key == "contexts"         => (key, contextsJson)
+      case (key, _) if key == "unstruct_event"   => (key, unstructJson)
+      case (key, _) if key == "derived_contexts" => (key, Common.derivedContextsJson)
+      case (key, _) if key == "event_name"       => (key, "mobile_event")
+      case (key, value)                          => (key, value)
     }
 
   }
@@ -409,6 +418,13 @@ object Instances {
 
     val unusedContexts: String = "performance_timing,ua_parser_context,web_page"
 
+  }
+
+  object Options {
+    val SructEventName                = "se_action"
+    val emptyFilterList: List[String] = Filters.emptyFilter.split(",").toList
+    val transformationOptions: TransformationOptions =
+      TransformationOptions(emptyFilterList, emptyFilterList, emptyFilterList, SructEventName)
   }
 
 }

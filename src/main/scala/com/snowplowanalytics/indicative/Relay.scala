@@ -21,7 +21,8 @@ import io.circe.Json
 
 object Relay {
 
-  val defaultIndicativeUri = "https://api.indicative.com/service/event"
+  val defaultIndicativeUri       = "https://api.indicative.com/service/event"
+  val defaultStructuredEventName = "se_action"
   private val relayHeaders = NonEmptyList.of(
     ("Indicative-Client", "Snowplow-Relay-" + BuildInfo.version),
     ("Content-Type", "application/json; charset=utf-8")

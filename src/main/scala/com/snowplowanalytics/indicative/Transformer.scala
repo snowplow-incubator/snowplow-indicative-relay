@@ -31,52 +31,56 @@ object Transformer {
   final case class TransformationError(message: String) extends Exception(message)
 
   /**
-   * Transforms Snowplow enriched event string into Indicative event format
-   * @param snowplowEvent Snowplow enriched event JSON string
-   * @param inventory a set of inventory items returned by EventTransformer
+   * An encapsulation of various options applied when performing a transformation
+   *
    * @param unusedEvents a list of events to filter out
    * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
    * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
+   * @param structuredEventNameField the field to use when processing a structured event. Typically se_action or se_category
+   */
+  final case class TransformationOptions(unusedEvents: List[String],
+                                         unusedAtomicFields: List[String],
+                                         unusedContexts: List[String],
+                                         structuredEventNameField: String)
+
+  /**
+   * Transforms Snowplow enriched event string into Indicative event format
+   * @param snowplowEvent Snowplow enriched event JSON string
+   * @param inventory a set of inventory items returned by EventTransformer
+   * @param options an encapsulation of various options applied when performing a transformation
    * @return either an error or a JsonObject containing Indicative event
    */
   def transform(
     snowplowEvent: String,
     inventory: Set[InventoryItem],
-    unusedEvents: List[String],
-    unusedAtomicFields: List[String],
-    unusedContexts: List[String]
+    options: TransformationOptions
   ): Option[Either[TransformationError, Json]] =
     (for {
       snowplowEvent <- EitherT
         .fromEither[Option](parse(snowplowEvent).leftMap(e => TransformationError(e.message)))
-      indicativeEvent <- EitherT(
-        snowplowJsonToIndicativeEvent(snowplowEvent, inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+      indicativeEvent <- EitherT(snowplowJsonToIndicativeEvent(snowplowEvent, inventory, options))
     } yield indicativeEvent).value
 
   /**
    * Turns a Snowplow enriched event in a json format into a json ready do be consumed by Indicative.
    * @param snowplowJson Snowplow enriched event in a json format
    * @param inventory a set of inventory items returned by EventTransformer
-   * @param unusedEvents a list of events to filter out
-   * @param unusedAtomicFields a list of atomic fields to remove from the Indicative event
-   * @param unusedContexts a list of contexts whose fields should be removed from the Indicative event
+   * @param options an encapsulation of various options applied when performing a transformation
    * @return None if the event is in the unusedEvents list, or if it doesn't contain a user identifying field (user_id,
    * client_session_user_id, or domain_userid). Otherwise, it returns either an event in Indicative
    * format or a transformation error.
    */
   def snowplowJsonToIndicativeEvent(snowplowJson: Json,
                                     inventory: Set[InventoryItem],
-                                    unusedEvents: List[String],
-                                    unusedAtomicFields: List[String],
-                                    unusedContexts: List[String]): Option[Either[TransformationError, Json]] = {
+                                    options: TransformationOptions): Option[Either[TransformationError, Json]] = {
     val flattenedEvent = flattenJson(snowplowJson, inventory)
 
-    val eventName = extractField(flattenedEvent, "event_name")
+    val eventName = getEventName(flattenedEvent, options.structuredEventNameField)
 
     val filteredEventName =
       eventName match { // Check if event should be filtered out because it's on the unusedEvents list.
-        case Right(n) if unusedEvents.contains(n) => None
-        case _                                    => Some(eventName)
+        case Right(n) if options.unusedEvents.contains(n) => None
+        case _                                            => Some(eventName)
       }
 
     val userId = getUserId(flattenedEvent)
@@ -86,14 +90,14 @@ object Transformer {
     val unusedContextFields =
       // unusedContexts can't be empty because either the env var is set or the default is being used.
       // But it can contain a single empty string, if no contexts are to be filtered out.
-      if (unusedContexts.headOption.contains("")) List()
+      if (options.unusedContexts.headOption.contains("")) List()
       else
         for {
-          context <- unusedContexts
+          context <- options.unusedContexts
           keys    <- flattenedEvent.filterKeys(_.startsWith(context)).keySet
         } yield keys
 
-    val properties = flattenedEvent -- unusedAtomicFields -- unusedContextFields
+    val properties = flattenedEvent -- options.unusedAtomicFields -- unusedContextFields
 
     filteredEventName.flatMap(_ => userId).map { uid =>
       (eventName, properties.asRight[TransformationError], eventTime)
@@ -101,6 +105,15 @@ object Transformer {
         .leftMap(decodingError => TransformationError(decodingError.message))
     }
   }
+
+  def getEventName(flattenedEvent: Map[String, Json],
+                   structuredEventField: String): Either[TransformationError, String] =
+    extractField(flattenedEvent, "event") match {
+      case Right("struct") =>
+        extractField(flattenedEvent, structuredEventField)
+          .leftFlatMap(_ => extractField(flattenedEvent, "event_name"))
+      case _ => extractField(flattenedEvent, "event_name")
+    }
 
   def getUserId(flattenedEvent: Map[String, Json]): Option[String] =
     extractField(flattenedEvent, "user_id")
@@ -170,5 +183,4 @@ object Transformer {
       "apiKey" -> Json.fromString(apiKey),
       "events" -> Json.fromValues(events)
     )
-
 }

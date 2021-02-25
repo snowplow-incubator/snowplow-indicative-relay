@@ -15,17 +15,17 @@ package com.snowplowanalytics.indicative
 import cats.data.EitherT
 import cats.instances.option._
 import cats.syntax.either._
+import com.snowplowanalytics.indicative.Transformer._
+import com.snowplowanalytics.indicative.Utils._
+import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
 import io.circe._
 import io.circe.literal._
 import org.json4s.jackson.JsonMethods._
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.{Data, EventTransformer}
-import com.snowplowanalytics.indicative.Transformer._
-import com.snowplowanalytics.indicative.Utils._
-import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
 import org.scalacheck.Prop.forAll
+import org.specs2.ScalaCheck
 import org.specs2.execute.Result
 import org.specs2.matcher.Matchers
+import org.specs2.mutable.Specification
 
 class TransformationSpec extends Specification with ScalaCheck with Matchers {
   "flattenJson" >> {
@@ -61,10 +61,6 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
   }
 
   "getUserId" >> {
-    def getTransformedSnowplowEvent(tsvInput: String): Data.EventWithInventory =
-      (for {
-        snowplowEvent <- EventTransformer.transformWithInventory(tsvInput)
-      } yield snowplowEvent).right.get
 
     "should return user_id if that is available" >> {
       val tsvInput = getTsvInput(Instances.Web.input)
@@ -118,6 +114,70 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
 
       getUserId(flattenedEvent) shouldEqual None
+    }
+  }
+
+  "getEventName" >> {
+    "with struct event" >> {
+      "in the default case should return se_action if that is available" >> {
+        val tsvInput = getTsvInput(Instances.Web.structInput)
+        val event =
+          (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+        val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+        val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+        val expected       = Option(Expectations.seAction)
+
+        getEventName(flattenedEvent, Relay.defaultStructuredEventName).toOption shouldEqual expected
+      }
+
+      "in the default case should return event_name if that is available and there is no se_action" >> {
+        val tsvInput = getTsvInput(Instances.Web.structInput.map {
+          case (key, _) if key == "se_action" => (key, "")
+          case (key, value)                   => (key, value)
+        })
+        val event =
+          (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+        val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+        val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+        val expected       = Option(Expectations.structEventName)
+
+        getEventName(flattenedEvent, Relay.defaultStructuredEventName).toOption shouldEqual expected
+      }
+
+      "should return the value of the field that was specified" >> {
+        val tsvInput = getTsvInput(Instances.Web.structInput)
+        val event =
+          (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+        val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+        val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+        val expected       = Option(Expectations.seCategory)
+
+        getEventName(flattenedEvent, "se_category").toOption shouldEqual expected
+      }
+    }
+
+    "with event other than struct" >> {
+      "should return event_name in the default case" >> {
+        val tsvInput = getTsvInput(Instances.Web.input)
+        val event =
+          (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+        val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+        val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+        val expected       = Option(Expectations.eventName)
+
+        getEventName(flattenedEvent, Relay.defaultStructuredEventName).toOption shouldEqual expected
+      }
+
+      "should return event_name even when a struct event field to be used is specified" >> {
+        val tsvInput = getTsvInput(Instances.Web.input)
+        val event =
+          (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+        val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+        val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+        val expected       = Option(Expectations.eventName)
+
+        getEventName(flattenedEvent, "se_category").toOption shouldEqual expected
+      }
     }
   }
 
@@ -184,19 +244,14 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       }
 
       forAll(inputGen) { str =>
-        val result = getTransformationResult(str,
-                                             Instances.Filters.emptyFilter.split(",").toList,
-                                             Instances.Filters.emptyFilter.split(",").toList,
-                                             Instances.Filters.emptyFilter.split(",").toList)
+        val result = getTransformationResult(str, Instances.Options.transformationOptions)
 
         result must beSome and result.map(_ must beRight).get
       }
     }
 
     def getTransformationResult(event: String,
-                                unusedEvents: List[String],
-                                unusedAtomicFields: List[String],
-                                unusedContexts: List[String]): Option[Either[TransformationError, Json]] =
+                                options: TransformationOptions): Option[Either[TransformationError, Json]] =
       (for {
         snowplowEvent <- EitherT.fromEither[Option](
           EventTransformer
@@ -204,7 +259,7 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
             .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
         indicativeEvent <- EitherT(
           Transformer
-            .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+            .transform(snowplowEvent.event, snowplowEvent.inventory, options))
       } yield indicativeEvent).value
 
     "should be transformed with real contexts generated from schemas" >> {
@@ -218,61 +273,61 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     }
 
     "no filters" >> {
-      val expected                         = Expectations.unfilteredIndicativeEvent
-      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
-      val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val expected         = Expectations.unfilteredIndicativeEvent
+      val tsvInput: String = getTsvInput(Instances.Web.input)
+      val options          = Instances.Options.transformationOptions
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual Some(Right(expected))
     }
 
     "filter out unused events" >> {
-      val expected                         = None
-      val unusedEvents: List[String]       = Instances.Filters.unusedEvents.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
-      val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val expected                   = None
+      val tsvInput: String           = getTsvInput(Instances.Web.input)
+      val unusedEvents: List[String] = Instances.Filters.unusedEvents.split(",").toList
+      val options                    = Instances.Options.transformationOptions.copy(unusedEvents = unusedEvents)
+
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual expected
     }
 
     "filter out unused atomic fields" >> {
       val expected                         = Expectations.indicativeEventWithTrimmedAtomicFields
-      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.unusedAtomicFields.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
       val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val unusedAtomicFields: List[String] = Instances.Filters.unusedAtomicFields.split(",").toList
+      val options =
+        Instances.Options.transformationOptions.copy(unusedAtomicFields = unusedAtomicFields)
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual Some(Right(expected))
     }
 
     "filter out unused contexts" >> {
-      val expected                         = Expectations.indicativeEventWithTrimmedContextFields
-      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.unusedContexts.split(",").toList
-      val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val expected                     = Expectations.indicativeEventWithTrimmedContextFields
+      val tsvInput: String             = getTsvInput(Instances.Web.input)
+      val unusedContexts: List[String] = Instances.Filters.unusedContexts.split(",").toList
+      val options                      = Instances.Options.transformationOptions.copy(unusedContexts = unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual Some(Right(expected))
     }
 
     "filter out events without a user identifying property" >> {
-      val expected                         = None
-      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
+      val expected = None
       val tsvInput = getTsvInput(
         Instances.Web.input
           .map {
             case (fieldName, _) if List("user_id", "domain_userid").contains(fieldName) => fieldName -> ""
             case a                                                                      => a
           })
-      val result = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val options = Instances.Options.transformationOptions
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual expected
     }
@@ -286,10 +341,33 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
         }
         .map(_._2)
         .mkString("\t")
-      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
-      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
-      val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
-      val result                           = getTransformationResult(event, unusedEvents, unusedAtomicFields, unusedContexts)
+      val options = Instances.Options.transformationOptions
+      val result =
+        getTransformationResult(event, options)
+
+      result shouldEqual Some(Right(expected))
+    }
+
+    "struct events using se_action" >> {
+      val expected                     = Expectations.indicativeEventUsingStructuredAction
+      val tsvInput: String             = getTsvInput(Instances.Web.structInput)
+      val unusedContexts: List[String] = Instances.Filters.unusedContexts.split(",").toList
+      val options                      = Instances.Options.transformationOptions.copy(unusedContexts = unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, options)
+
+      result shouldEqual Some(Right(expected))
+    }
+
+    "struct events using se_category" >> {
+      val expected                       = Expectations.indicativeEventUsingStructuredCategory
+      val tsvInput: String               = getTsvInput(Instances.Web.structInput)
+      val unusedContexts: List[String]   = Instances.Filters.unusedContexts.split(",").toList
+      val structedEventNameField: String = "se_category"
+      val options = Instances.Options.transformationOptions.copy(unusedContexts = unusedContexts,
+                                                                 structuredEventNameField = structedEventNameField)
+      val result =
+        getTransformationResult(tsvInput, options)
 
       result shouldEqual Some(Right(expected))
     }
