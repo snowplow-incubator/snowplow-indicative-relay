@@ -184,10 +184,13 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       }
 
       forAll(inputGen) { str =>
-        val result = getTransformationResult(str,
-                                             Instances.Filters.emptyFilter.split(",").toList,
-                                             Instances.Filters.emptyFilter.split(",").toList,
-                                             Instances.Filters.emptyFilter.split(",").toList)
+        val result = getTransformationResult(
+          str,
+          Instances.Filters.emptyFilter.split(",").toList,
+          Instances.Filters.emptyFilter.split(",").toList,
+          Instances.Filters.emptyFilter.split(",").toList,
+          Relay.defaultStructuredEventName
+        )
 
         result must beSome and result.map(_ must beRight).get
       }
@@ -196,7 +199,8 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
     def getTransformationResult(event: String,
                                 unusedEvents: List[String],
                                 unusedAtomicFields: List[String],
-                                unusedContexts: List[String]): Option[Either[TransformationError, Json]] =
+                                unusedContexts: List[String],
+                                structuredEventNameField: String): Option[Either[TransformationError, Json]] =
       (for {
         snowplowEvent <- EitherT.fromEither[Option](
           EventTransformer
@@ -204,7 +208,9 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
             .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
         indicativeEvent <- EitherT(
           Transformer
-            .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+            .transform(snowplowEvent.event,
+                       snowplowEvent.inventory,
+                       TransformOptions(unusedEvents, unusedAtomicFields, unusedContexts, structuredEventNameField)))
       } yield indicativeEvent).value
 
     "should be transformed with real contexts generated from schemas" >> {
@@ -222,8 +228,10 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
       val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual Some(Right(expected))
     }
@@ -233,8 +241,10 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.unusedEvents.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
       val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual expected
     }
@@ -244,8 +254,10 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.unusedAtomicFields.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
       val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual Some(Right(expected))
     }
@@ -255,8 +267,10 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.unusedContexts.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
       val tsvInput: String                 = getTsvInput(Instances.Web.input)
-      val result                           = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual Some(Right(expected))
     }
@@ -266,13 +280,15 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
       val tsvInput = getTsvInput(
         Instances.Web.input
           .map {
             case (fieldName, _) if List("user_id", "domain_userid").contains(fieldName) => fieldName -> ""
             case a                                                                      => a
           })
-      val result = getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts)
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual expected
     }
@@ -289,7 +305,9 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
       val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
       val unusedContexts: List[String]     = Instances.Filters.emptyFilter.split(",").toList
-      val result                           = getTransformationResult(event, unusedEvents, unusedAtomicFields, unusedContexts)
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
+      val result =
+        getTransformationResult(event, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual Some(Right(expected))
     }
