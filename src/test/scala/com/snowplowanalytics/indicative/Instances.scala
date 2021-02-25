@@ -287,6 +287,17 @@ object Instances {
 
   }
 
+  object WebStructuredEvent {
+
+    val input = Web.input.map {
+      case (key, value) if key == "se_action"   => (key, "struct link click action")
+      case (key, value) if key == "se_category" => (key, "struct link click category")
+      case (key, value) if key == "event_name"  => (key, "event")
+      case (key, value)                         => (key, value)
+    }
+
+  }
+
   object Mobile {
 
     val unstructJson = """{

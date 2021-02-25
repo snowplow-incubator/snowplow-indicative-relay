@@ -15,17 +15,17 @@ package com.snowplowanalytics.indicative
 import cats.data.EitherT
 import cats.instances.option._
 import cats.syntax.either._
+import com.snowplowanalytics.indicative.Transformer._
+import com.snowplowanalytics.indicative.Utils._
+import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
 import io.circe._
 import io.circe.literal._
 import org.json4s.jackson.JsonMethods._
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.{Data, EventTransformer}
-import com.snowplowanalytics.indicative.Transformer._
-import com.snowplowanalytics.indicative.Utils._
-import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
 import org.scalacheck.Prop.forAll
+import org.specs2.ScalaCheck
 import org.specs2.execute.Result
 import org.specs2.matcher.Matchers
+import org.specs2.mutable.Specification
 
 class TransformationSpec extends Specification with ScalaCheck with Matchers {
   "flattenJson" >> {
@@ -61,10 +61,6 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
   }
 
   "getUserId" >> {
-    def getTransformedSnowplowEvent(tsvInput: String): Data.EventWithInventory =
-      (for {
-        snowplowEvent <- EventTransformer.transformWithInventory(tsvInput)
-      } yield snowplowEvent).right.get
 
     "should return user_id if that is available" >> {
       val tsvInput = getTsvInput(Instances.Web.input)
@@ -119,6 +115,31 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
 
       getUserId(flattenedEvent) shouldEqual None
     }
+  }
+
+  "getEventName" >> {
+    "should return se_action if that is available" >> {
+      val tsvInput = getTsvInput(Instances.WebStructuredEvent.input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+      val expected       = Option(Expectations.seAction)
+
+      getEventName(flattenedEvent, Relay.defaultStructuredEventName).toOption shouldEqual expected
+    }
+
+    "should return event_name if that is available and there is no se_action" >> {
+      val tsvInput = getTsvInput(Instances.Web.input)
+      val event =
+        (for { parsed <- io.circe.parser.parse(getTransformedSnowplowEvent(tsvInput).event) } yield parsed).right.get
+      val inventory      = getTransformedSnowplowEvent(tsvInput).inventory
+      val flattenedEvent = FieldsExtraction.flattenJson(event, inventory)
+      val expected       = Option(Expectations.eventName)
+
+      getEventName(flattenedEvent, Relay.defaultStructuredEventName).toOption shouldEqual expected
+    }
+
   }
 
   "constructBatchesOfEvents" >> {
@@ -308,6 +329,34 @@ class TransformationSpec extends Specification with ScalaCheck with Matchers {
       val structedEventNameField: String   = Relay.defaultStructuredEventName
       val result =
         getTransformationResult(event, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
+
+      result shouldEqual Some(Right(expected))
+    }
+
+    "structured events using se_action" >> {
+      val expected                         = Expectations.indicativeEventUsingStructuredAction
+      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
+      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
+      val unusedContexts: List[String]     = Instances.Filters.unusedContexts.split(",").toList
+      val structedEventNameField: String   = Relay.defaultStructuredEventName
+      val tsvInput: String                 = getTsvInput(Instances.WebStructuredEvent.input)
+
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
+
+      result shouldEqual Some(Right(expected))
+    }
+
+    "structured events using se_category" >> {
+      val expected                         = Expectations.indicativeEventUsingStructuredCategory
+      val unusedEvents: List[String]       = Instances.Filters.emptyFilter.split(",").toList
+      val unusedAtomicFields: List[String] = Instances.Filters.emptyFilter.split(",").toList
+      val unusedContexts: List[String]     = Instances.Filters.unusedContexts.split(",").toList
+      val structedEventNameField: String   = "se_category"
+      val tsvInput: String                 = getTsvInput(Instances.WebStructuredEvent.input)
+
+      val result =
+        getTransformationResult(tsvInput, unusedEvents, unusedAtomicFields, unusedContexts, structedEventNameField)
 
       result shouldEqual Some(Right(expected))
     }

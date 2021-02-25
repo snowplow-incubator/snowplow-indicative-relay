@@ -62,7 +62,7 @@ object Transformer {
                                     options: TransformOptions): Option[Either[TransformationError, Json]] = {
     val flattenedEvent = flattenJson(snowplowJson, inventory)
 
-    val eventName = getEventName(flattenedEvent)
+    val eventName = getEventName(flattenedEvent, options.structuredEventNameField)
 
     val filteredEventName =
       eventName match { // Check if event should be filtered out because it's on the unusedEvents list.
@@ -93,8 +93,9 @@ object Transformer {
     }
   }
 
-  def getEventName(flattenedEvent: Map[String, Json]): Either[TransformationError, String] =
-    extractField(flattenedEvent, "se_action")
+  def getEventName(flattenedEvent: Map[String, Json],
+                   structuredEventField: String): Either[TransformationError, String] =
+    extractField(flattenedEvent, structuredEventField)
       .leftFlatMap(_ => extractField(flattenedEvent, "event_name"))
       .leftFlatMap(_ => extractField(flattenedEvent, "event"))
 

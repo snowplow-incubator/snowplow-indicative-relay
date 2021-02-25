@@ -13,9 +13,9 @@
 package com.snowplowanalytics.indicative
 
 import cats.syntax.either._
-
 import com.snowplowanalytics.iglu.core.SchemaKey
 import com.snowplowanalytics.iglu.schemaddl.scalacheck.{IgluSchemas, JsonGenSchema}
+import com.snowplowanalytics.snowplow.analytics.scalasdk.json.{Data, EventTransformer}
 import org.json4s.JValue
 import org.scalacheck.Gen
 
@@ -47,5 +47,10 @@ object Utils {
 
   def getTsvInput(input: List[(String, String)]): String =
     input.map(_._2).mkString("\t")
+
+  def getTransformedSnowplowEvent(tsvInput: String): Data.EventWithInventory =
+    (for {
+      snowplowEvent <- EventTransformer.transformWithInventory(tsvInput)
+    } yield snowplowEvent).right.get
 
 }
