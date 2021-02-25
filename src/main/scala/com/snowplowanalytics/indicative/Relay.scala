@@ -27,6 +27,8 @@ object Relay {
     ("Content-Type", "application/json; charset=utf-8")
   )
 
+  val defaultStructuredEventName = "se_action"
+
   def postSingleEvent(indicativeUri: String)(event: Json): IO[HttpResponse[String]] =
     IO {
       Http(indicativeUri)
