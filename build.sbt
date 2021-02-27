@@ -17,7 +17,7 @@ lazy val root = project
     organization := "com.snowplowanalytics",
     version := "0.4.0",
     description := "A relay transforming Snowplow enriched events into Indicative format",
-    scalaVersion := "2.11.12",
+    scalaVersion := "2.13.5",
     javacOptions := BuildSettings.javaCompilerOptions
   )
   .enablePlugins(BuildInfoPlugin)
