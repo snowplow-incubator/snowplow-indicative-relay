@@ -17,11 +17,11 @@ import java.time.ZonedDateTime
 import scala.annotation.tailrec
 
 import cats.syntax.either._
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.Data
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.JsonShredder
 import io.circe.Json
 
-import Transformer.TransformationError
+import com.snowplowanalytics.indicative.Transformer.TransformationError
+import com.snowplowanalytics.snowplow.analytics.scalasdk.Data.ShreddedType
+import com.snowplowanalytics.snowplow.analytics.scalasdk.SnowplowEvent
 
 object FieldsExtraction {
 
@@ -49,7 +49,7 @@ object FieldsExtraction {
    * @param inventory
    * @return a map where keys are derived from the input json
    */
-  def flattenJson(json: Json, inventory: Set[Data.InventoryItem]): Map[String, Json] = {
+  def flattenJson(json: Json, inventory: Set[ShreddedType]): Map[String, Json] = {
 
     @tailrec
     def iterateObject(key: String, fields: List[(String, Json)], accumulator: Map[String, Json]): Map[String, Json] =
@@ -80,18 +80,15 @@ object FieldsExtraction {
    * @param inventory inventory items returned by EventTransformer
    * @return new key name
    */
-  private def simpleKeyName(previousKey: String, propertyName: String, inventory: Set[Data.InventoryItem]): String =
+  private def simpleKeyName(previousKey: String, propertyName: String, inventory: Set[ShreddedType]): String =
     inventory
-      .find(item => Data.fixSchema(item.shredProperty, item.igluUri) == previousKey)
-      .flatMap(item => getNameFromUri(item.igluUri))
+      .find(item => SnowplowEvent.transformSchema(item.shredProperty, item.schemaKey) == previousKey)
+      .flatMap(item => Some(item.schemaKey.name))
       .map(toSnakeCase)
       .map(schemaName => s"${schemaName}_${propertyName}")
       .getOrElse(propertyName)
 
-  private def getNameFromUri(uri: Data.IgluUri): Option[String] =
-    JsonShredder.schemaPattern.findFirstMatchIn(uri).flatMap(m => Option(m.group(2)))
-
-  private val regex                            = """(.)([\.\-]|(?=[A-Z]))(.)""".r
+  private val regex                            = """(.)([.\-]|(?=[A-Z]))(.)""".r
   private def toSnakeCase(str: String): String = regex.replaceAllIn(str, "$1_$3").toLowerCase
 
 }

@@ -17,9 +17,10 @@ import cats.instances.either._
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.either._
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.Data.InventoryItem
 import io.circe.Json
 import io.circe.parser.parse
+
+import com.snowplowanalytics.snowplow.analytics.scalasdk.Data.ShreddedType
 
 /**
  * Contains functions for transforming Snowplow JSON into Indicative JSON. Outputs do not include the apiKey field.
@@ -52,7 +53,7 @@ object Transformer {
    */
   def transform(
     snowplowEvent: String,
-    inventory: Set[InventoryItem],
+    inventory: Set[ShreddedType],
     options: TransformationOptions
   ): Option[Either[TransformationError, Json]] =
     (for {
@@ -71,7 +72,7 @@ object Transformer {
    * format or a transformation error.
    */
   def snowplowJsonToIndicativeEvent(snowplowJson: Json,
-                                    inventory: Set[InventoryItem],
+                                    inventory: Set[ShreddedType],
                                     options: TransformationOptions): Option[Either[TransformationError, Json]] = {
     val flattenedEvent = flattenJson(snowplowJson, inventory)
 

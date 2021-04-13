@@ -25,7 +25,7 @@ object Instances {
       "collector_tstamp"         -> "2018-07-20 00:02:05",
       "dvce_created_tstamp"      -> "2018-07-20 00:03:57.885",
       "event"                    -> "unstruct",
-      "event_id"                 -> "c6124-b53a-4b13-a233-0088f79dcbcb",
+      "event_id"                 -> "000c6124-b53a-4b13-a233-0088f79dcbcb",
       "txn_id"                   -> "41828",
       "name_tracker"             -> "cloudfront-1",
       "v_tracker"                -> "js-2.1.0",
@@ -180,7 +180,7 @@ object Instances {
   object Web {
 
     val unstructJson = """{
-      "schema": "iglu:com.snowplowanalytics.snowplow/contexts/jsonschema/1-0-0",
+      "schema": "iglu:com.snowplowanalytics.snowplow/unstruct_event/jsonschema/1-0-0",
       "data": {
         "schema": "iglu:com.snowplowanalytics.snowplow/link_click/jsonschema/1-0-1",
         "data": {
@@ -278,7 +278,7 @@ object Instances {
       ]
     }"""
 
-    val input = Common.inputStub.map {
+    val input: List[(String, String)] = Common.inputStub.map {
       case (key, _) if key == "platform"         => (key, "web")
       case (key, _) if key == "contexts"         => (key, contextsJson)
       case (key, _) if key == "unstruct_event"   => (key, unstructJson)
@@ -287,7 +287,7 @@ object Instances {
       case (key, value)                          => (key, value)
     }
 
-    val structInput = input.map {
+    val structInput: List[(String, String)] = input.map {
       case (key, _) if key == "se_action"   => (key, "struct link click action")
       case (key, _) if key == "se_category" => (key, "struct link click category")
       case (key, _) if key == "event_name"  => (key, "event")
@@ -299,7 +299,7 @@ object Instances {
   object Mobile {
 
     val unstructJson = """{
-      "schema": "iglu:com.snowplowanalytics.snowplow/contexts/jsonschema/1-0-0",
+      "schema": "iglu:com.snowplowanalytics.snowplow/unstruct_event/jsonschema/1-0-0",
       "data": {
         "schema": "iglu:com.acme/mobile_event/jsonschema/1-1-0",
         "data": {
@@ -336,7 +336,7 @@ object Instances {
       ]
     }"""
 
-    val input = Common.inputStub.map {
+    val input: List[(String, String)] = Common.inputStub.map {
       case (key, _) if key == "platform"         => (key, "mob")
       case (key, _) if key == "contexts"         => (key, contextsJson)
       case (key, _) if key == "unstruct_event"   => (key, unstructJson)

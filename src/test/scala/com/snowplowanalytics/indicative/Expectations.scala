@@ -12,7 +12,6 @@
  */
 package com.snowplowanalytics.indicative
 
-// Circe
 import io.circe.literal._
 
 object Expectations {
@@ -98,7 +97,7 @@ object Expectations {
            "platform" : "web",
            "ua_parser_context_osFamily" : "Windows XP",
            "performance_timing_loadEventEnd" : 0,
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "performance_timing_redirectEnd" : 0,
            "ua_parser_context_osVersion" : "Windows XP",
            "performance_timing_domainLookupEnd" : 1415358090102,
@@ -166,7 +165,7 @@ object Expectations {
            "platform" : "web",
            "ua_parser_context_osFamily" : "Windows XP",
            "performance_timing_loadEventEnd" : 0,
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "performance_timing_redirectEnd" : 0,
            "ua_parser_context_osVersion" : "Windows XP",
            "performance_timing_domainLookupEnd" : 1415358090102,
@@ -228,7 +227,7 @@ object Expectations {
            "domain_sessionidx" : 3,
            "page_urlport" : 80,
            "platform" : "web",
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "page_url" : "http://www.snowplowanalytics.com",
            "txn_id" : 41828,
            "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",
@@ -301,7 +300,7 @@ object Expectations {
        "page_urlport" : 80,
        "platform" : "mob",
        "ua_parser_context_osFamily" : "Windows XP",
-       "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+       "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
        "ua_parser_context_osVersion" : "Windows XP",
        "page_url" : "http://www.snowplowanalytics.com",
        "txn_id" : 41828,
@@ -365,7 +364,7 @@ object Expectations {
            "domain_sessionidx" : 3,
            "page_urlport" : 80,
            "platform" : "web",
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "page_url" : "http://www.snowplowanalytics.com",
            "txn_id" : 41828,
            "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",
@@ -428,7 +427,7 @@ object Expectations {
            "domain_sessionidx" : 3,
            "page_urlport" : 80,
            "platform" : "web",
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "page_url" : "http://www.snowplowanalytics.com",
            "txn_id" : 41828,
            "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",

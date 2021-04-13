@@ -12,14 +12,17 @@
  */
 package com.snowplowanalytics.indicative
 
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent
+
 import scala.collection.JavaConverters._
+
 import cats.data.EitherT
 import cats.effect.{Clock, IO}
 import cats.implicits._
-import com.amazonaws.services.lambda.runtime.events.KinesisEvent
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
 import io.circe.Json
-import Transformer.{TransformationError, TransformationOptions}
+
+import com.snowplowanalytics.snowplow.analytics.scalasdk.Event
+import com.snowplowanalytics.indicative.Transformer.{TransformationError, TransformationOptions}
 
 class LambdaHandler {
   import LambdaHandler._
@@ -53,8 +56,8 @@ class LambdaHandler {
     val (errors, jsons) = events.separate
 
     val (toSend, tooBig) = Transformer.constructBatches[Json](
-      Transformer.getSize _,
-      Transformer.constructJson(apiKey) _,
+      Transformer.getSize,
+      Transformer.constructJson(apiKey),
       jsons,
       indicativeBatchSize,
       indicativePayloadBytesSize
@@ -95,12 +98,13 @@ class LambdaHandler {
     (for {
       dataArray <- EitherT.fromEither[Option](kinesisDataArray)
       snowplowEvent <- EitherT.fromEither[Option](
-        EventTransformer
-          .transformWithInventory(dataArray)
-          .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+        Event
+          .parse(dataArray)
+          .toEither
+          .leftMap(error => TransformationError(error.toString)))
       indicativeEvent <- EitherT(
         Transformer
-          .transform(snowplowEvent.event, snowplowEvent.inventory, transformationOptions))
+          .transform(snowplowEvent.toJson(true).noSpaces, snowplowEvent.inventory, transformationOptions))
     } yield indicativeEvent).value
   }
 
