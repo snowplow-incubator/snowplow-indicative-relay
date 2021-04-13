@@ -20,7 +20,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [build-image]: https://github.com/snowplow-incubator/snowplow-indicative-relay/workflows/build/badge.svg
 [build-wf]: https://github.com/snowplow-incubator/snowplow-indicative-relay/actions?query=workflow%3Abuild
 
-[release-image]: https://img.shields.io/badge/release-0.4.0-orange.svg?style=flat
+[release-image]: https://img.shields.io/badge/release-0.5.0-orange.svg?style=flat
 [release]: https://github.com/snowplow-incubator/snowplow-indicative-relay/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
