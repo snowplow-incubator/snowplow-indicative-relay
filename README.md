@@ -11,7 +11,7 @@ Detailed setup instructions, as well as more technical information, are provided
 
 ## Copyright and license
 
-Snowplow is copyright 2018-2019 Snowplow Analytics Ltd.
+Snowplow is copyright 2018-2021 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0][license] (the "License"); you may not use this software except in compliance with the License.
 
