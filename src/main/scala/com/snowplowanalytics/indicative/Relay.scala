@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -21,7 +21,8 @@ import io.circe.Json
 
 object Relay {
 
-  val defaultIndicativeUri = "https://api.indicative.com/service/event"
+  val defaultIndicativeUri       = "https://api.indicative.com/service/event"
+  val defaultStructuredEventName = "se_action"
   private val relayHeaders = NonEmptyList.of(
     ("Indicative-Client", "Snowplow-Relay-" + BuildInfo.version),
     ("Content-Type", "application/json; charset=utf-8")

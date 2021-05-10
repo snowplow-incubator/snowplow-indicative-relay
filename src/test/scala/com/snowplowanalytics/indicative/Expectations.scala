@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,7 +12,6 @@
  */
 package com.snowplowanalytics.indicative
 
-// Circe
 import io.circe.literal._
 
 object Expectations {
@@ -98,7 +97,7 @@ object Expectations {
            "platform" : "web",
            "ua_parser_context_osFamily" : "Windows XP",
            "performance_timing_loadEventEnd" : 0,
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "performance_timing_redirectEnd" : 0,
            "ua_parser_context_osVersion" : "Windows XP",
            "performance_timing_domainLookupEnd" : 1415358090102,
@@ -166,7 +165,7 @@ object Expectations {
            "platform" : "web",
            "ua_parser_context_osFamily" : "Windows XP",
            "performance_timing_loadEventEnd" : 0,
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "performance_timing_redirectEnd" : 0,
            "ua_parser_context_osVersion" : "Windows XP",
            "performance_timing_domainLookupEnd" : 1415358090102,
@@ -228,7 +227,7 @@ object Expectations {
            "domain_sessionidx" : 3,
            "page_urlport" : 80,
            "platform" : "web",
-           "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
            "page_url" : "http://www.snowplowanalytics.com",
            "txn_id" : 41828,
            "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",
@@ -301,7 +300,7 @@ object Expectations {
        "page_urlport" : 80,
        "platform" : "mob",
        "ua_parser_context_osFamily" : "Windows XP",
-       "event_id" : "c6124-b53a-4b13-a233-0088f79dcbcb",
+       "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
        "ua_parser_context_osVersion" : "Windows XP",
        "page_url" : "http://www.snowplowanalytics.com",
        "txn_id" : 41828,
@@ -311,8 +310,139 @@ object Expectations {
     }
   }"""
 
+  val indicativeEventUsingStructuredAction = json"""
+      {
+        "eventName": "struct link click action",
+        "eventUniqueId": "jon.doe@email.com",
+        "eventTime": 1532217837886,
+        "properties": {
+           "page_urlhost" : "www.snowplowanalytics.com",
+           "etl_tstamp" : "2018-07-20T00:01:25.292Z",
+           "geo_latitude" : 37.443604,
+           "v_collector" : "clj-tomcat-0.1.0",
+           "collector_tstamp" : "2018-07-20T00:02:05Z",
+           "event_vendor" : "com.snowplowanalytics.snowplow",
+           "network_userid" : "ecdff4d0-9175-40ac-a8bb-325c49733607",
+           "geo_country" : "US",
+           "user_fingerprint" : "2161814971",
+           "page_urlscheme" : "http",
+           "event" : "struct",
+           "user_ipaddress" : "92.231.54.234",
+           "br_features_pdf" : true,
+           "geo_region" : "TX",
+           "page_urlfragment" : "4-conclusion",
+           "br_features_flash" : false,
+           "event_format" : "jsonschema",
+           "geo_zipcode" : "94109",
+           "event_name" : "event",
+           "page_urlpath" : "/product/index.html",
+           "ip_netspeed" : "Cable/DSL",
+           "page_title" : "On Analytics",
+           "ip_organization" : "Bouygues Telecom",
+           "dvce_created_tstamp" : "2018-07-20T00:03:57.885Z",
+           "se_action" : "struct link click action",
+           "se_category" : "struct link click category",
+           "user_id" : "jon.doe@email.com",
+           "true_tstamp" : "2018-07-23T00:03:57.886Z",
+           "geo_longitude" : -122.4124,
+           "v_tracker" : "js-2.1.0",
+           "link_click_targetUrl" : "http://www.example.com",
+           "event_version" : "1-0-0",
+           "domain_sessionid" : "2b15e5c8-d3b1-11e4-b9d6-1681e6b88ec1",
+           "domain_userid" : "bc2e92ec6c204a14",
+           "page_urlquery" : "id=GTM-DLRG",
+           "geo_location" : "37.443604,-122.4124",
+           "link_click_elementClasses" : "foreground",
+           "link_click_elementId" : "exampleLink",
+           "name_tracker" : "cloudfront-1",
+           "geo_city" : "New York",
+           "derived_tstamp" : "2018-07-22T00:03:57.886Z",
+           "app_id" : "angry-birds",
+           "ip_isp" : "FDN Communications",
+           "geo_region_name" : "Florida",
+           "ip_domain" : "nuvox.net",
+           "domain_sessionidx" : 3,
+           "page_urlport" : 80,
+           "platform" : "web",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
+           "page_url" : "http://www.snowplowanalytics.com",
+           "txn_id" : 41828,
+           "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",
+           "v_etl" : "serde-0.5.2"
+         }
+      }
+    """
+
+  val indicativeEventUsingStructuredCategory = json"""
+      {
+        "eventName": "struct link click category",
+        "eventUniqueId": "jon.doe@email.com",
+        "eventTime": 1532217837886,
+        "properties": {
+           "page_urlhost" : "www.snowplowanalytics.com",
+           "etl_tstamp" : "2018-07-20T00:01:25.292Z",
+           "geo_latitude" : 37.443604,
+           "v_collector" : "clj-tomcat-0.1.0",
+           "collector_tstamp" : "2018-07-20T00:02:05Z",
+           "event_vendor" : "com.snowplowanalytics.snowplow",
+           "network_userid" : "ecdff4d0-9175-40ac-a8bb-325c49733607",
+           "geo_country" : "US",
+           "user_fingerprint" : "2161814971",
+           "page_urlscheme" : "http",
+           "event" : "struct",
+           "user_ipaddress" : "92.231.54.234",
+           "br_features_pdf" : true,
+           "geo_region" : "TX",
+           "page_urlfragment" : "4-conclusion",
+           "br_features_flash" : false,
+           "event_format" : "jsonschema",
+           "geo_zipcode" : "94109",
+           "event_name" : "event",
+           "page_urlpath" : "/product/index.html",
+           "ip_netspeed" : "Cable/DSL",
+           "page_title" : "On Analytics",
+           "ip_organization" : "Bouygues Telecom",
+           "dvce_created_tstamp" : "2018-07-20T00:03:57.885Z",
+           "se_action" : "struct link click action",
+           "se_category" : "struct link click category",
+           "user_id" : "jon.doe@email.com",
+           "true_tstamp" : "2018-07-23T00:03:57.886Z",
+           "geo_longitude" : -122.4124,
+           "v_tracker" : "js-2.1.0",
+           "link_click_targetUrl" : "http://www.example.com",
+           "event_version" : "1-0-0",
+           "domain_sessionid" : "2b15e5c8-d3b1-11e4-b9d6-1681e6b88ec1",
+           "domain_userid" : "bc2e92ec6c204a14",
+           "page_urlquery" : "id=GTM-DLRG",
+           "geo_location" : "37.443604,-122.4124",
+           "link_click_elementClasses" : "foreground",
+           "link_click_elementId" : "exampleLink",
+           "name_tracker" : "cloudfront-1",
+           "geo_city" : "New York",
+           "derived_tstamp" : "2018-07-22T00:03:57.886Z",
+           "app_id" : "angry-birds",
+           "ip_isp" : "FDN Communications",
+           "geo_region_name" : "Florida",
+           "ip_domain" : "nuvox.net",
+           "domain_sessionidx" : 3,
+           "page_urlport" : 80,
+           "platform" : "web",
+           "event_id" : "000c6124-b53a-4b13-a233-0088f79dcbcb",
+           "page_url" : "http://www.snowplowanalytics.com",
+           "txn_id" : 41828,
+           "event_fingerprint" : "e3dbfa9cca0412c3d4052863cefb547f",
+           "v_etl" : "serde-0.5.2"
+         }
+      }
+    """
+
   val userId              = "jon.doe@email.com"
   val clientSessionUserId = "d1a1abd2-ad91-4427-877b-b5b6a2d59d7a"
   val domainUserid        = "bc2e92ec6c204a14"
+
+  val seAction        = "struct link click action"
+  val seCategory      = "struct link click category"
+  val eventName       = "link_click"
+  val structEventName = "event"
 
 }

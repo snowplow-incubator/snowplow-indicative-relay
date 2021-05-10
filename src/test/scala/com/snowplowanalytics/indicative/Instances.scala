@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,6 +12,8 @@
  */
 package com.snowplowanalytics.indicative
 
+import com.snowplowanalytics.indicative.Transformer.TransformationOptions
+
 object Instances {
 
   object Common {
@@ -23,7 +25,7 @@ object Instances {
       "collector_tstamp"         -> "2018-07-20 00:02:05",
       "dvce_created_tstamp"      -> "2018-07-20 00:03:57.885",
       "event"                    -> "unstruct",
-      "event_id"                 -> "c6124-b53a-4b13-a233-0088f79dcbcb",
+      "event_id"                 -> "000c6124-b53a-4b13-a233-0088f79dcbcb",
       "txn_id"                   -> "41828",
       "name_tracker"             -> "cloudfront-1",
       "v_tracker"                -> "js-2.1.0",
@@ -178,7 +180,7 @@ object Instances {
   object Web {
 
     val unstructJson = """{
-      "schema": "iglu:com.snowplowanalytics.snowplow/contexts/jsonschema/1-0-0",
+      "schema": "iglu:com.snowplowanalytics.snowplow/unstruct_event/jsonschema/1-0-0",
       "data": {
         "schema": "iglu:com.snowplowanalytics.snowplow/link_click/jsonschema/1-0-1",
         "data": {
@@ -276,21 +278,28 @@ object Instances {
       ]
     }"""
 
-    val input = Common.inputStub.map {
-      case (key, value) if key == "platform"         => (key, "web")
-      case (key, value) if key == "contexts"         => (key, contextsJson)
-      case (key, value) if key == "unstruct_event"   => (key, unstructJson)
-      case (key, value) if key == "derived_contexts" => (key, Common.derivedContextsJson)
-      case (key, value) if key == "event_name"       => (key, "link_click")
-      case (key, value)                              => (key, value)
+    val input: List[(String, String)] = Common.inputStub.map {
+      case (key, _) if key == "platform"         => (key, "web")
+      case (key, _) if key == "contexts"         => (key, contextsJson)
+      case (key, _) if key == "unstruct_event"   => (key, unstructJson)
+      case (key, _) if key == "derived_contexts" => (key, Common.derivedContextsJson)
+      case (key, _) if key == "event_name"       => (key, "link_click")
+      case (key, value)                          => (key, value)
     }
 
+    val structInput: List[(String, String)] = input.map {
+      case (key, _) if key == "se_action"   => (key, "struct link click action")
+      case (key, _) if key == "se_category" => (key, "struct link click category")
+      case (key, _) if key == "event_name"  => (key, "event")
+      case (key, _) if key == "event"       => (key, "struct")
+      case (key, value)                     => (key, value)
+    }
   }
 
   object Mobile {
 
     val unstructJson = """{
-      "schema": "iglu:com.snowplowanalytics.snowplow/contexts/jsonschema/1-0-0",
+      "schema": "iglu:com.snowplowanalytics.snowplow/unstruct_event/jsonschema/1-0-0",
       "data": {
         "schema": "iglu:com.acme/mobile_event/jsonschema/1-1-0",
         "data": {
@@ -327,13 +336,13 @@ object Instances {
       ]
     }"""
 
-    val input = Common.inputStub.map {
-      case (key, value) if key == "platform"         => (key, "mob")
-      case (key, value) if key == "contexts"         => (key, contextsJson)
-      case (key, value) if key == "unstruct_event"   => (key, unstructJson)
-      case (key, value) if key == "derived_contexts" => (key, Common.derivedContextsJson)
-      case (key, value) if key == "event_name"       => (key, "mobile_event")
-      case (key, value)                              => (key, value)
+    val input: List[(String, String)] = Common.inputStub.map {
+      case (key, _) if key == "platform"         => (key, "mob")
+      case (key, _) if key == "contexts"         => (key, contextsJson)
+      case (key, _) if key == "unstruct_event"   => (key, unstructJson)
+      case (key, _) if key == "derived_contexts" => (key, Common.derivedContextsJson)
+      case (key, _) if key == "event_name"       => (key, "mobile_event")
+      case (key, value)                          => (key, value)
     }
 
   }
@@ -409,6 +418,13 @@ object Instances {
 
     val unusedContexts: String = "performance_timing,ua_parser_context,web_page"
 
+  }
+
+  object Options {
+    val SructEventName                = "se_action"
+    val emptyFilterList: List[String] = Filters.emptyFilter.split(",").toList
+    val transformationOptions: TransformationOptions =
+      TransformationOptions(emptyFilterList, emptyFilterList, emptyFilterList, SructEventName)
   }
 
 }

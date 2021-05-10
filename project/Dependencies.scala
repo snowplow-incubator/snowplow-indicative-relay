@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,30 +18,30 @@ object Dependencies {
     val awsLambdaCore    = "1.2.0"
     val awsLambdaEvents  = "2.2.7"
     val kinesisClient    = "1.11.2"
-    val analyticsSdk     = "0.3.2"
-    val circe            = "0.11.2"
+    val analyticsSdk     = "2.1.0"
+    val circe            = "0.11.1"
     val catsEffect       = "1.4.0"
     val scalaj           = "2.4.2"
     val specs2           = "4.5.1"
-    val scalacheckSchema = "0.1.0"
+    val scalacheckSchema = "0.2.1"
   }
 
   object Libraries {
     //Java
-    val awsLambdaCore    = "com.amazonaws"          % "aws-lambda-java-core"         % V.awsLambdaCore
-    val awsLambdaEvents  = "com.amazonaws"          % "aws-lambda-java-events"       % V.awsLambdaEvents
-    val kinesisClient    = "com.amazonaws"          % "amazon-kinesis-client"        % V.kinesisClient
+    val awsLambdaCore   = "com.amazonaws" % "aws-lambda-java-core" % V.awsLambdaCore
+    val awsLambdaEvents = "com.amazonaws" % "aws-lambda-java-events" % V.awsLambdaEvents
+    val kinesisClient   = "com.amazonaws" % "amazon-kinesis-client" % V.kinesisClient
     // Scala
-    val analyticsSdk     = "com.snowplowanalytics" %% "snowplow-scala-analytics-sdk" % V.analyticsSdk
-    val circeCore        = "io.circe"              %% "circe-core"                   % V.circe
-    val circeParser      = "io.circe"              %% "circe-parser"                 % V.circe
-    val catsEffect       = "org.typelevel"         %% "cats-effect"                  % V.catsEffect
-    val scalaj           = "org.scalaj"            %% "scalaj-http"                  % V.scalaj
+    val analyticsSdk = "com.snowplowanalytics" %% "snowplow-scala-analytics-sdk" % V.analyticsSdk
+    val circeCore    = "io.circe" %% "circe-core" % V.circe
+    val circeParser  = "io.circe" %% "circe-parser" % V.circe
+    val catsEffect   = "org.typelevel" %% "cats-effect" % V.catsEffect
+    val scalaj       = "org.scalaj" %% "scalaj-http" % V.scalaj
     // Tests
-    val circeLiteral     = "io.circe"              %% "circe-literal"                % V.circe  % "test"
-    val specs2           = "org.specs2"            %% "specs2-core"                  % V.specs2 % "test"
-    val specs2ScalaCheck = "org.specs2"            %% "specs2-scalacheck"            % V.specs2 % "test"
-    val scalacheckSchema = "com.snowplowanalytics" %% "scalacheck-schema"            % V.scalacheckSchema % "test"
+    val circeLiteral     = "io.circe" %% "circe-literal" % V.circe % "test"
+    val specs2           = "org.specs2" %% "specs2-core" % V.specs2 % "test"
+    val specs2ScalaCheck = "org.specs2" %% "specs2-scalacheck" % V.specs2 % "test"
+    val scalacheckSchema = "com.snowplowanalytics" %% "scalacheck-schema" % V.scalacheckSchema % "test"
   }
 
 }
