@@ -1,3 +1,10 @@
+Version 0.5.0 (2021-05-11)
+--------------------------
+Add option to choose which field to use as event name for structured events (#138)
+Bump snowplow-scala-analytics-sdk to 2.1.0 (#152)
+Migrate from Travis to Github Actions (#148)
+Extend copyright to 2021 (#151)
+
 Version 0.4.0 (2019-09-18)
 --------------------------
 Fix typo in user ID field name for mobile events (#57)
