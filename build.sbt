@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -15,9 +15,9 @@ lazy val root = project
   .settings(
     name := "indicative-relay",
     organization := "com.snowplowanalytics",
-    version := "0.4.0",
+    version := "0.5.0",
     description := "A relay transforming Snowplow enriched events into Indicative format",
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.12.13",
     javacOptions := BuildSettings.javaCompilerOptions
   )
   .enablePlugins(BuildInfoPlugin)

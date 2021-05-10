@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2018-2021 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,35 +12,42 @@
  */
 package com.snowplowanalytics.indicative
 
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent
+
 import scala.collection.JavaConverters._
 
 import cats.data.EitherT
 import cats.effect.{Clock, IO}
 import cats.implicits._
-import com.amazonaws.services.lambda.runtime.events.KinesisEvent
-import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer
 import io.circe.Json
 
-import Transformer.TransformationError
+import com.snowplowanalytics.snowplow.analytics.scalasdk.Event
+import com.snowplowanalytics.indicative.Transformer.{TransformationError, TransformationOptions}
 
 class LambdaHandler {
   import LambdaHandler._
 
-  val indicativeUri: String = getConfig[String]("INDICATIVE_URI", Some(Relay.defaultIndicativeUri))(s => s)
-  val apiKey: String        = getConfig[String]("INDICATIVE_API_KEY")(s                               => s)
-  val unusedEvents
-    : List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
-  val unusedAtomicFields: List[String] = getConfig[List[String]](
+  private val indicativeUri: String = getConfig[String]("INDICATIVE_URI", Some(Relay.defaultIndicativeUri))(s => s)
+  private val apiKey: String        = getConfig[String]("INDICATIVE_API_KEY")(s                               => s)
+
+  private val unusedEvents: List[String] = getConfig[List[String]]("UNUSED_EVENTS", Some(Filters.unusedEvents))(
+    strToList(_)) // eg, `UNUSED_EVENTS=page_ping,app_heartbeat`
+  private val unusedAtomicFields: List[String] = getConfig[List[String]](
     "UNUSED_ATOMIC_FIELDS",
     Some(Filters.unusedAtomicFields))(strToList(_)) // eg, `UNUSED_ATOMIC_FIELDS=etl_tstamp,geo_longitude`
-  val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
+  private val unusedContexts: List[String] = getConfig[List[String]]("UNUSED_CONTEXTS", Some(Filters.unusedContexts))(
     strToList(_)) // eg, `UNUSED_CONTEXTS=performance_timing,geolocation_context`
+  private val structuredEventNameField: String =
+    getConfig[String]("STRUCTURED_EVENT_NAME_FIELD", Some(Relay.defaultStructuredEventName))(s => s)
+  private val transformationOptions: TransformationOptions =
+    TransformationOptions(unusedEvents, unusedAtomicFields, unusedContexts, structuredEventNameField)
 
   // Number of events in a payload sent to Indicative is limited to 100
-  val indicativeBatchSize = 100
+  private val indicativeBatchSize = 100
   // Size of a payload sent to Indicative is limited to 1Mb
-  val indicativePayloadBytesSize = 1000000
-  implicit val c: Clock[IO]      = Clock.create[IO]
+  private val indicativePayloadBytesSize = 1000000
+
+  implicit val c: Clock[IO] = Clock.create[IO]
 
   def recordHandler(event: KinesisEvent): Unit = {
     val events: List[Either[TransformationError, Json]] =
@@ -49,8 +56,8 @@ class LambdaHandler {
     val (errors, jsons) = events.separate
 
     val (toSend, tooBig) = Transformer.constructBatches[Json](
-      Transformer.getSize _,
-      Transformer.constructJson(apiKey) _,
+      Transformer.getSize,
+      Transformer.constructJson(apiKey),
       jsons,
       indicativeBatchSize,
       indicativePayloadBytesSize
@@ -91,12 +98,13 @@ class LambdaHandler {
     (for {
       dataArray <- EitherT.fromEither[Option](kinesisDataArray)
       snowplowEvent <- EitherT.fromEither[Option](
-        EventTransformer
-          .transformWithInventory(dataArray)
-          .leftMap(errors => TransformationError(errors.mkString("\n  * "))))
+        Event
+          .parse(dataArray)
+          .toEither
+          .leftMap(error => TransformationError(error.toString)))
       indicativeEvent <- EitherT(
         Transformer
-          .transform(snowplowEvent.event, snowplowEvent.inventory, unusedEvents, unusedAtomicFields, unusedContexts))
+          .transform(snowplowEvent.toJson(true).noSpaces, snowplowEvent.inventory, transformationOptions))
     } yield indicativeEvent).value
   }
 
