@@ -15,7 +15,7 @@ import sbt._
 object Dependencies {
 
   object V {
-    val awsLambdaCore    = "1.2.0"
+    val awsLambdaCore    = "1.2.1"
     val awsLambdaEvents  = "2.2.7"
     val kinesisClient    = "1.11.2"
     val analyticsSdk     = "2.1.0"
