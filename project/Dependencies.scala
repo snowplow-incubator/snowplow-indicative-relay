@@ -20,7 +20,7 @@ object Dependencies {
     val kinesisClient    = "1.11.2"
     val analyticsSdk     = "2.1.0"
     val circe            = "0.11.1"
-    val catsEffect       = "1.4.0"
+    val catsEffect       = "3.3.14"
     val scalaj           = "2.4.2"
     val specs2           = "4.5.1"
     val scalacheckSchema = "0.2.1"
